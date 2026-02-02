@@ -1,9 +1,31 @@
-// 🔒 Приложение БЕЗ публичных API ключей
-// Всё идёт через Apps Script!
+// 🔥 Приложение с JSONP (обход CORS)
 
 let articlesData = [];
 let currentItem = null;
 let annotatedIds = new Set();
+
+// JSONP helper
+function jsonp(url, callback) {
+    return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_' + Math.random().toString(36).substr(2, 9);
+        const script = document.createElement('script');
+        
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            resolve(data);
+        };
+        
+        script.onerror = function() {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            reject(new Error('JSONP request failed'));
+        };
+        
+        script.src = url + '&callback=' + callbackName;
+        document.body.appendChild(script);
+    });
+}
 
 // Получение IP адреса
 async function getClientIP() {
@@ -17,13 +39,11 @@ async function getClientIP() {
     }
 }
 
-// Загрузка данных через Apps Script
+// Загрузка данных через JSONP
 async function loadDataFromAppsScript() {
     try {
         const url = `${CONFIG.appsScriptUrl}?action=getData`;
-        
-        const response = await fetch(url);
-        const result = await response.json();
+        const result = await jsonp(url);
         
         if (!result.success) {
             throw new Error(result.error || 'Ошибка загрузки данных');
@@ -40,13 +60,11 @@ async function loadDataFromAppsScript() {
     }
 }
 
-// Загрузка размеченных ID через Apps Script
+// Загрузка размеченных ID через JSONP
 async function loadAnnotatedIds() {
     try {
         const url = `${CONFIG.appsScriptUrl}?action=getAnnotated`;
-        
-        const response = await fetch(url);
-        const result = await response.json();
+        const result = await jsonp(url);
         
         if (result.success) {
             annotatedIds = new Set(result.data);
@@ -57,16 +75,16 @@ async function loadAnnotatedIds() {
     }
 }
 
-// Сохранение через Apps Script
+// Сохранение через POST (mode: no-cors)
 async function saveAnnotation(itemId, wordMention, authorAffiliation, ip) {
     try {
         const timestamp = new Date().toISOString();
         
         if (!CONFIG.appsScriptUrl || CONFIG.appsScriptUrl === 'ВСТАВЬ_СЮДА_URL_APPS_SCRIPT') {
-            throw new Error('❌ Не настроен Apps Script URL!\n\nОткрой config.js и вставь URL');
+            throw new Error('❌ Не настроен Apps Script URL!');
         }
         
-        const response = await fetch(CONFIG.appsScriptUrl, {
+        await fetch(CONFIG.appsScriptUrl, {
             method: 'POST',
             mode: 'no-cors',
             headers: {
