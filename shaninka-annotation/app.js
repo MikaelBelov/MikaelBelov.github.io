@@ -1,4 +1,4 @@
-// 🔐 Приложение с Google OAuth и сохранением прогресса по пользователю
+// 🔐 Приложение с Google OAuth - автоматический вход
 
 let articlesData = [];
 let currentItem = null;
@@ -6,7 +6,7 @@ let annotatedIds = new Set();
 let currentUser = null;
 let currentIndex = 0;
 
-// Google OAuth Client ID (нужно получить из Google Cloud Console)
+// Google OAuth Client ID
 const GOOGLE_CLIENT_ID = CONFIG.googleClientId;
 
 // JSONP helper
@@ -37,26 +37,24 @@ function initGoogleSignIn() {
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
-        auto_select: false
+        auto_select: true,
+        cancel_on_tap_outside: false
     });
     
-    // Проверяем есть ли сохранённая сессия
     checkStoredSession();
 }
 
 // Обработка ответа от Google
 function handleCredentialResponse(response) {
-    // Декодируем JWT токен
     const payload = parseJwt(response.credential);
     
     currentUser = {
         email: payload.email,
         name: payload.name,
         picture: payload.picture,
-        sub: payload.sub // Уникальный Google ID
+        sub: payload.sub
     };
     
-    // Сохраняем в localStorage
     localStorage.setItem('google_user', JSON.stringify(currentUser));
     
     console.log('👤 Вошёл пользователь:', currentUser.name);
@@ -86,11 +84,28 @@ function checkStoredSession() {
             loadUserProgress();
         } catch (e) {
             console.error('Ошибка восстановления сессии:', e);
-            showLoginOverlay();
+            promptGoogleSignIn();
         }
     } else {
-        showLoginOverlay();
+        promptGoogleSignIn();
     }
+}
+
+// Показать Google Sign-In (СРАЗУ, без overlay)
+function promptGoogleSignIn() {
+    hideLoginOverlay();
+    
+    // Автоматически показываем Google окно
+    google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed()) {
+            console.log('Google Sign-In не показан, показываем overlay');
+            showLoginOverlay();
+        }
+        if (notification.isSkippedMoment()) {
+            console.log('Пользователь закрыл окно, показываем overlay');
+            showLoginOverlay();
+        }
+    });
 }
 
 // Показать overlay входа
@@ -107,7 +122,6 @@ function hideLoginOverlay() {
 function updateUIAfterLogin() {
     hideLoginOverlay();
     
-    // Обновляем верхнюю панель
     document.getElementById('signInBtn').style.display = 'none';
     document.getElementById('userInfo').classList.add('active');
     document.getElementById('userName').textContent = currentUser.name;
@@ -119,26 +133,21 @@ function signOut() {
     currentUser = null;
     localStorage.removeItem('google_user');
     
-    // Сбрасываем UI
     document.getElementById('signInBtn').style.display = 'flex';
     document.getElementById('userInfo').classList.remove('active');
     
-    // Очищаем данные
     articlesData = [];
     annotatedIds.clear();
     
-    showLoginOverlay();
+    // Сразу показываем Google Sign-In
+    promptGoogleSignIn();
     
     console.log('👋 Вышли из системы');
 }
 
-// Вход (показываем Google Sign-In)
+// Вход (вызывается при клике на кнопку)
 function signIn() {
-    google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            console.log('Нужно настроить Google Sign-In');
-        }
-    });
+    promptGoogleSignIn();
 }
 
 // Получение IP адреса
@@ -179,11 +188,9 @@ async function loadUserProgress() {
     if (!currentUser) return;
     
     try {
-        // Загружаем данные статей
         const dataLoaded = await loadDataFromAppsScript();
         if (!dataLoaded) return;
         
-        // Загружаем прогресс пользователя с сервера
         const url = `${CONFIG.appsScriptUrl}?action=getUserProgress&userId=${encodeURIComponent(currentUser.sub)}`;
         const result = await jsonp(url);
         
