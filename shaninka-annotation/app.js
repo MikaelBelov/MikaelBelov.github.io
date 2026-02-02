@@ -37,11 +37,10 @@ function initGoogleSignIn() {
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
-        auto_select: true,
-        cancel_on_tap_outside: false
+        auto_select: true  // Это ОК - автовыбор если один аккаунт
     });
     
-    checkStoredSession();
+    checkStoredSession();  // Это НЕ показывает popup, только проверяет localStorage
 }
 
 // Обработка ответа от Google
@@ -77,17 +76,13 @@ function parseJwt(token) {
 function checkStoredSession() {
     const stored = localStorage.getItem('google_user');
     if (stored) {
-        try {
-            currentUser = JSON.parse(stored);
-            console.log('👤 Восстановлена сессия:', currentUser.name);
-            updateUIAfterLogin();
-            loadUserProgress();
-        } catch (e) {
-            console.error('Ошибка восстановления сессии:', e);
-            promptGoogleSignIn();
-        }
+        // Есть сохранённая сессия - входим автоматически
+        currentUser = JSON.parse(stored);
+        updateUIAfterLogin();
+        loadUserProgress();
     } else {
-        promptGoogleSignIn();
+        // НЕТ сессии - показываем overlay с кнопкой (НЕ вызываем Google popup!)
+        showLoginOverlay();
     }
 }
 
