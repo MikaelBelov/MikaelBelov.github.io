@@ -1,10 +1,11 @@
-// 📊 Главная логика приложения
+// 🔒 Приложение БЕЗ публичных API ключей
+// Всё идёт через Apps Script!
 
 let articlesData = [];
 let currentItem = null;
 let annotatedIds = new Set();
 
-// Получение IP адреса пользователя
+// Получение IP адреса
 async function getClientIP() {
     try {
         const response = await fetch('https://api.ipify.org?format=json');
@@ -16,51 +17,39 @@ async function getClientIP() {
     }
 }
 
-// Загрузка данных из Google Sheets
-async function loadDataFromSheets() {
+// Загрузка данных через Apps Script
+async function loadDataFromAppsScript() {
     try {
-        const range = `${CONFIG.sheets.data}!A:M`;
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.spreadsheetId}/values/${range}?key=${CONFIG.apiKey}`;
+        const url = `${CONFIG.appsScriptUrl}?action=getData`;
         
         const response = await fetch(url);
-        const data = await response.json();
+        const result = await response.json();
         
-        if (!data.values || data.values.length === 0) {
-            throw new Error('Нет данных в таблице');
+        if (!result.success) {
+            throw new Error(result.error || 'Ошибка загрузки данных');
         }
         
-        const rows = data.values.slice(1);
-        
-        articlesData = rows.map((row, index) => ({
-            id: row[0] || `row_${index}`,
-            title: row[4] || 'Без названия',
-            authors: row[5] ? JSON.parse(row[5]) : [],
-            url: row[6] || '',
-            journal_name: row[10] || 'Не указан',
-            publication_year: row[11] || 'Не указан',
-            publisher: row[7] || ''
-        }));
-        
+        articlesData = result.data;
         console.log(`Загружено ${articlesData.length} статей`);
         return true;
+        
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
-        showError('Ошибка загрузки данных из Google Sheets: ' + error.message);
+        showError('Ошибка загрузки данных: ' + error.message);
         return false;
     }
 }
 
-// Загрузка уже размеченных ID
+// Загрузка размеченных ID через Apps Script
 async function loadAnnotatedIds() {
     try {
-        const range = `${CONFIG.sheets.annotations}!A:A`;
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.spreadsheetId}/values/${range}?key=${CONFIG.apiKey}`;
+        const url = `${CONFIG.appsScriptUrl}?action=getAnnotated`;
         
         const response = await fetch(url);
-        const data = await response.json();
+        const result = await response.json();
         
-        if (data.values && data.values.length > 1) {
-            annotatedIds = new Set(data.values.slice(1).map(row => row[0]));
+        if (result.success) {
+            annotatedIds = new Set(result.data);
             console.log(`Загружено ${annotatedIds.size} размеченных статей`);
         }
     } catch (error) {
@@ -68,18 +57,16 @@ async function loadAnnotatedIds() {
     }
 }
 
-// Сохранение через Google Apps Script
-async function saveAnnotationToScript(itemId, wordMention, authorAffiliation, ip) {
+// Сохранение через Apps Script
+async function saveAnnotation(itemId, wordMention, authorAffiliation, ip) {
     try {
         const timestamp = new Date().toISOString();
         
-        const scriptUrl = CONFIG.appsScriptUrl;
-        
-        if (!scriptUrl || scriptUrl === 'ВСТАВЬ_СЮДА_URL_APPS_SCRIPT') {
-            throw new Error('❌ Не настроен Apps Script URL!\n\n📖 Смотри инструкцию в README.md');
+        if (!CONFIG.appsScriptUrl || CONFIG.appsScriptUrl === 'ВСТАВЬ_СЮДА_URL_APPS_SCRIPT') {
+            throw new Error('❌ Не настроен Apps Script URL!\n\nОткрой config.js и вставь URL');
         }
         
-        const response = await fetch(scriptUrl, {
+        const response = await fetch(CONFIG.appsScriptUrl, {
             method: 'POST',
             mode: 'no-cors',
             headers: {
@@ -102,7 +89,7 @@ async function saveAnnotationToScript(itemId, wordMention, authorAffiliation, ip
     }
 }
 
-// Получить следующий неразмеченный элемент
+// Получить следующий элемент
 function getNextItem() {
     for (const item of articlesData) {
         if (!annotatedIds.has(item.id)) {
@@ -177,7 +164,7 @@ function loadNextItem() {
 }
 
 // Сохранить аннотацию
-async function saveAnnotation() {
+async function handleSave() {
     if (!currentItem) return;
     
     const wordMention = document.getElementById('wordMention').checked;
@@ -191,7 +178,7 @@ async function saveAnnotation() {
     
     try {
         const ip = await getClientIP();
-        await saveAnnotationToScript(currentItem.id, wordMention, authorAffiliation, ip);
+        await saveAnnotation(currentItem.id, wordMention, authorAffiliation, ip);
         
         annotatedIds.add(currentItem.id);
         
@@ -209,7 +196,7 @@ async function saveAnnotation() {
 }
 
 // Пропустить элемент
-async function skipItem() {
+async function handleSkip() {
     if (!currentItem) return;
     
     const skipBtn = document.getElementById('skipBtn');
@@ -220,7 +207,7 @@ async function skipItem() {
     
     try {
         const ip = await getClientIP();
-        await saveAnnotationToScript(currentItem.id, false, false, ip);
+        await saveAnnotation(currentItem.id, false, false, ip);
         annotatedIds.add(currentItem.id);
         
         setTimeout(() => {
@@ -271,7 +258,7 @@ function escapeHtml(text) {
 // Инициализация
 async function init() {
     try {
-        const dataLoaded = await loadDataFromSheets();
+        const dataLoaded = await loadDataFromAppsScript();
         if (!dataLoaded) return;
         
         await loadAnnotatedIds();
@@ -285,17 +272,17 @@ async function init() {
 }
 
 // Обработчики событий
-document.getElementById('saveBtn').addEventListener('click', saveAnnotation);
-document.getElementById('skipBtn').addEventListener('click', skipItem);
+document.getElementById('saveBtn').addEventListener('click', handleSave);
+document.getElementById('skipBtn').addEventListener('click', handleSkip);
 
 // Горячие клавиши
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
-        saveAnnotation();
+        handleSave();
     } else if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
-        skipItem();
+        handleSkip();
     }
 });
 
