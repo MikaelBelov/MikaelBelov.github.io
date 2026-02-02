@@ -1,11 +1,16 @@
-// 🔥 Приложение с JSONP (обход CORS)
+// 🔐 Приложение с Google OAuth и сохранением прогресса по пользователю
 
 let articlesData = [];
 let currentItem = null;
 let annotatedIds = new Set();
+let currentUser = null;
+let currentIndex = 0;
+
+// Google OAuth Client ID (нужно получить из Google Cloud Console)
+const GOOGLE_CLIENT_ID = CONFIG.googleClientId;
 
 // JSONP helper
-function jsonp(url, callback) {
+function jsonp(url) {
     return new Promise((resolve, reject) => {
         const callbackName = 'jsonp_' + Math.random().toString(36).substr(2, 9);
         const script = document.createElement('script');
@@ -24,6 +29,115 @@ function jsonp(url, callback) {
         
         script.src = url + '&callback=' + callbackName;
         document.body.appendChild(script);
+    });
+}
+
+// Инициализация Google Sign-In
+function initGoogleSignIn() {
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false
+    });
+    
+    // Проверяем есть ли сохранённая сессия
+    checkStoredSession();
+}
+
+// Обработка ответа от Google
+function handleCredentialResponse(response) {
+    // Декодируем JWT токен
+    const payload = parseJwt(response.credential);
+    
+    currentUser = {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        sub: payload.sub // Уникальный Google ID
+    };
+    
+    // Сохраняем в localStorage
+    localStorage.setItem('google_user', JSON.stringify(currentUser));
+    
+    console.log('👤 Вошёл пользователь:', currentUser.name);
+    
+    updateUIAfterLogin();
+    loadUserProgress();
+}
+
+// Парсинг JWT токена
+function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+}
+
+// Проверка сохранённой сессии
+function checkStoredSession() {
+    const stored = localStorage.getItem('google_user');
+    if (stored) {
+        try {
+            currentUser = JSON.parse(stored);
+            console.log('👤 Восстановлена сессия:', currentUser.name);
+            updateUIAfterLogin();
+            loadUserProgress();
+        } catch (e) {
+            console.error('Ошибка восстановления сессии:', e);
+            showLoginOverlay();
+        }
+    } else {
+        showLoginOverlay();
+    }
+}
+
+// Показать overlay входа
+function showLoginOverlay() {
+    document.getElementById('loginOverlay').classList.remove('hidden');
+}
+
+// Скрыть overlay входа
+function hideLoginOverlay() {
+    document.getElementById('loginOverlay').classList.add('hidden');
+}
+
+// Обновить UI после входа
+function updateUIAfterLogin() {
+    hideLoginOverlay();
+    
+    // Обновляем верхнюю панель
+    document.getElementById('signInBtn').style.display = 'none';
+    document.getElementById('userInfo').classList.add('active');
+    document.getElementById('userName').textContent = currentUser.name;
+    document.getElementById('userAvatar').src = currentUser.picture;
+}
+
+// Выход
+function signOut() {
+    currentUser = null;
+    localStorage.removeItem('google_user');
+    
+    // Сбрасываем UI
+    document.getElementById('signInBtn').style.display = 'flex';
+    document.getElementById('userInfo').classList.remove('active');
+    
+    // Очищаем данные
+    articlesData = [];
+    annotatedIds.clear();
+    
+    showLoginOverlay();
+    
+    console.log('👋 Вышли из системы');
+}
+
+// Вход (показываем Google Sign-In)
+function signIn() {
+    google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            console.log('Нужно настроить Google Sign-In');
+        }
     });
 }
 
@@ -50,7 +164,7 @@ async function loadDataFromAppsScript() {
         }
         
         articlesData = result.data;
-        console.log(`Загружено ${articlesData.length} статей`);
+        console.log(`✅ Загружено ${articlesData.length} статей`);
         return true;
         
     } catch (error) {
@@ -60,29 +174,69 @@ async function loadDataFromAppsScript() {
     }
 }
 
-// Загрузка размеченных ID через JSONP
-async function loadAnnotatedIds() {
+// Загрузка прогресса пользователя
+async function loadUserProgress() {
+    if (!currentUser) return;
+    
     try {
-        const url = `${CONFIG.appsScriptUrl}?action=getAnnotated`;
+        // Загружаем данные статей
+        const dataLoaded = await loadDataFromAppsScript();
+        if (!dataLoaded) return;
+        
+        // Загружаем прогресс пользователя с сервера
+        const url = `${CONFIG.appsScriptUrl}?action=getUserProgress&userId=${encodeURIComponent(currentUser.sub)}`;
         const result = await jsonp(url);
         
-        if (result.success) {
-            annotatedIds = new Set(result.data);
-            console.log(`Загружено ${annotatedIds.size} размеченных статей`);
+        if (result.success && result.data) {
+            annotatedIds = new Set(result.data.annotated_ids || []);
+            currentIndex = result.data.last_index || 0;
+            console.log(`📂 Загружен прогресс: ${annotatedIds.size} размеченных`);
         }
+        
+        loadNextItem();
+        
     } catch (error) {
-        console.error('Ошибка загрузки аннотаций:', error);
+        console.error('Ошибка загрузки прогресса:', error);
+        showError('Ошибка загрузки прогресса: ' + error.message);
     }
 }
 
-// Сохранение через POST (mode: no-cors)
-async function saveAnnotation(itemId, wordMention, authorAffiliation, ip) {
+// Сохранение прогресса на сервер
+async function saveUserProgress() {
+    if (!currentUser) return;
+    
     try {
-        const timestamp = new Date().toISOString();
+        await fetch(CONFIG.appsScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'saveProgress',
+                userId: currentUser.sub,
+                userEmail: currentUser.email,
+                userName: currentUser.name,
+                annotated_ids: [...annotatedIds],
+                last_index: currentIndex
+            })
+        });
         
-        if (!CONFIG.appsScriptUrl || CONFIG.appsScriptUrl === 'ВСТАВЬ_СЮДА_URL_APPS_SCRIPT') {
-            throw new Error('❌ Не настроен Apps Script URL!');
-        }
+        console.log('💾 Прогресс сохранён');
+    } catch (error) {
+        console.error('Ошибка сохранения прогресса:', error);
+    }
+}
+
+// Сохранение аннотации
+async function saveAnnotation(itemId, wordMention, authorAffiliation) {
+    if (!currentUser) {
+        throw new Error('Необходимо войти в систему');
+    }
+    
+    try {
+        const ip = await getClientIP();
+        const timestamp = new Date().toISOString();
         
         await fetch(CONFIG.appsScriptUrl, {
             method: 'POST',
@@ -91,9 +245,13 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation, ip) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                action: 'saveAnnotation',
                 item_id: itemId,
                 word_mention: wordMention,
                 author_affiliation: authorAffiliation,
+                user_id: currentUser.sub,
+                user_email: currentUser.email,
+                user_name: currentUser.name,
                 ip: ip,
                 timestamp: timestamp
             })
@@ -109,11 +267,22 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation, ip) {
 
 // Получить следующий элемент
 function getNextItem() {
-    for (const item of articlesData) {
+    for (let i = currentIndex; i < articlesData.length; i++) {
+        const item = articlesData[i];
         if (!annotatedIds.has(item.id)) {
+            currentIndex = i;
             return item;
         }
     }
+    
+    for (let i = 0; i < currentIndex; i++) {
+        const item = articlesData[i];
+        if (!annotatedIds.has(item.id)) {
+            currentIndex = i;
+            return item;
+        }
+    }
+    
     return null;
 }
 
@@ -123,7 +292,16 @@ function displayItem(item) {
     const form = document.getElementById('annotationForm');
     const frame = document.getElementById('articleFrame');
     
+    const itemIndex = articlesData.findIndex(a => a.id === item.id);
+    
     metadata.innerHTML = `
+        <div class="metadata-item">
+            <div class="metadata-label">Прогресс</div>
+            <div class="metadata-value" style="color: #007bff; font-weight: 600;">
+                Статья ${itemIndex + 1} из ${articlesData.length}
+            </div>
+        </div>
+        
         <div class="metadata-item">
             <div class="metadata-label">Название</div>
             <div class="metadata-value">${escapeHtml(item.title)}</div>
@@ -183,7 +361,7 @@ function loadNextItem() {
 
 // Сохранить аннотацию
 async function handleSave() {
-    if (!currentItem) return;
+    if (!currentItem || !currentUser) return;
     
     const wordMention = document.getElementById('wordMention').checked;
     const authorAffiliation = document.getElementById('authorAffiliation').checked;
@@ -195,10 +373,10 @@ async function handleSave() {
     saveBtn.textContent = 'Сохранение...';
     
     try {
-        const ip = await getClientIP();
-        await saveAnnotation(currentItem.id, wordMention, authorAffiliation, ip);
+        await saveAnnotation(currentItem.id, wordMention, authorAffiliation);
         
         annotatedIds.add(currentItem.id);
+        await saveUserProgress();
         
         setTimeout(() => {
             loadNextItem();
@@ -215,7 +393,7 @@ async function handleSave() {
 
 // Пропустить элемент
 async function handleSkip() {
-    if (!currentItem) return;
+    if (!currentItem || !currentUser) return;
     
     const skipBtn = document.getElementById('skipBtn');
     const saveBtn = document.getElementById('saveBtn');
@@ -224,9 +402,9 @@ async function handleSkip() {
     skipBtn.textContent = 'Пропуск...';
     
     try {
-        const ip = await getClientIP();
-        await saveAnnotation(currentItem.id, false, false, ip);
+        await saveAnnotation(currentItem.id, false, false);
         annotatedIds.add(currentItem.id);
+        await saveUserProgress();
         
         setTimeout(() => {
             loadNextItem();
@@ -247,8 +425,8 @@ function showCompletionMessage() {
     
     metadata.innerHTML = `
         <div class="alert alert-success">
-            <strong>Поздравляем!</strong><br>
-            Все элементы размечены. Спасибо за вашу работу!
+            <strong>Поздравляем, ${escapeHtml(currentUser.name)}!</strong><br>
+            Вы разметили все доступные статьи. Спасибо за вашу работу!
         </div>
     `;
     
@@ -273,28 +451,17 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Инициализация
-async function init() {
-    try {
-        const dataLoaded = await loadDataFromAppsScript();
-        if (!dataLoaded) return;
-        
-        await loadAnnotatedIds();
-        
-        loadNextItem();
-        
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-        showError('Ошибка инициализации приложения');
-    }
-}
-
 // Обработчики событий
 document.getElementById('saveBtn').addEventListener('click', handleSave);
 document.getElementById('skipBtn').addEventListener('click', handleSkip);
+document.getElementById('signInBtn').addEventListener('click', signIn);
+document.getElementById('signInBtnOverlay').addEventListener('click', signIn);
+document.getElementById('signOutBtn').addEventListener('click', signOut);
 
 // Горячие клавиши
 document.addEventListener('keydown', (e) => {
+    if (!currentUser) return;
+    
     if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         handleSave();
@@ -304,5 +471,19 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Запуск
-window.addEventListener('load', init);
+// Сохраняем прогресс при закрытии
+window.addEventListener('beforeunload', () => {
+    if (currentUser) {
+        saveUserProgress();
+    }
+});
+
+// Инициализация при загрузке
+window.addEventListener('load', () => {
+    if (typeof google !== 'undefined') {
+        initGoogleSignIn();
+    } else {
+        console.error('Google Sign-In library not loaded');
+        showError('Ошибка загрузки Google Sign-In');
+    }
+});
