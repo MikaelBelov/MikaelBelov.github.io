@@ -1,4 +1,4 @@
-// 🔐 Приложение с Google OAuth - автоматический вход
+// 🔐 Приложение с Google OAuth - только кнопка справа вверху
 
 let articlesData = [];
 let currentItem = null;
@@ -37,10 +37,10 @@ function initGoogleSignIn() {
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
-        auto_select: true  // Это ОК - автовыбор если один аккаунт
+        auto_select: true
     });
     
-    checkStoredSession();  // Это НЕ показывает popup, только проверяет localStorage
+    checkStoredSession();
 }
 
 // Обработка ответа от Google
@@ -76,47 +76,21 @@ function parseJwt(token) {
 function checkStoredSession() {
     const stored = localStorage.getItem('google_user');
     if (stored) {
-        // Есть сохранённая сессия - входим автоматически
-        currentUser = JSON.parse(stored);
-        updateUIAfterLogin();
-        loadUserProgress();
-    } else {
-        // НЕТ сессии - показываем overlay с кнопкой (НЕ вызываем Google popup!)
-        showLoginOverlay();
+        try {
+            currentUser = JSON.parse(stored);
+            console.log('👤 Восстановлена сессия:', currentUser.name);
+            updateUIAfterLogin();
+            loadUserProgress();
+        } catch (e) {
+            console.error('Ошибка восстановления сессии:', e);
+            // Просто ждём пока пользователь нажмёт кнопку
+        }
     }
-}
-
-// Показать Google Sign-In (СРАЗУ, без overlay)
-function promptGoogleSignIn() {
-    hideLoginOverlay();
-    
-    // Автоматически показываем Google окно
-    google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed()) {
-            console.log('Google Sign-In не показан, показываем overlay');
-            showLoginOverlay();
-        }
-        if (notification.isSkippedMoment()) {
-            console.log('Пользователь закрыл окно, показываем overlay');
-            showLoginOverlay();
-        }
-    });
-}
-
-// Показать overlay входа
-function showLoginOverlay() {
-    document.getElementById('loginOverlay').classList.remove('hidden');
-}
-
-// Скрыть overlay входа
-function hideLoginOverlay() {
-    document.getElementById('loginOverlay').classList.add('hidden');
+    // Если нет сессии - просто ждём пока пользователь нажмёт кнопку
 }
 
 // Обновить UI после входа
 function updateUIAfterLogin() {
-    hideLoginOverlay();
-    
     document.getElementById('signInBtn').style.display = 'none';
     document.getElementById('userInfo').classList.add('active');
     document.getElementById('userName').textContent = currentUser.name;
@@ -134,15 +108,25 @@ function signOut() {
     articlesData = [];
     annotatedIds.clear();
     
-    // Сразу показываем Google Sign-In
-    promptGoogleSignIn();
+    // Очищаем интерфейс
+    document.getElementById('metadata').innerHTML = '<div class="loading">Нажмите "Войти через Google" для начала работы</div>';
+    document.getElementById('annotationForm').style.display = 'none';
+    document.getElementById('articleFrame').src = 'about:blank';
     
     console.log('👋 Вышли из системы');
 }
 
-// Вход (вызывается при клике на кнопку)
+// Вход - показываем Google popup
 function signIn() {
-    promptGoogleSignIn();
+    google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed()) {
+            console.log('Google Sign-In не может показать окно');
+            alert('Не удалось показать окно входа. Проверьте настройки браузера.');
+        }
+        if (notification.isSkippedMoment()) {
+            console.log('Пользователь закрыл окно входа');
+        }
+    });
 }
 
 // Получение IP адреса
@@ -457,7 +441,6 @@ function escapeHtml(text) {
 document.getElementById('saveBtn').addEventListener('click', handleSave);
 document.getElementById('skipBtn').addEventListener('click', handleSkip);
 document.getElementById('signInBtn').addEventListener('click', signIn);
-document.getElementById('signInBtnOverlay').addEventListener('click', signIn);
 document.getElementById('signOutBtn').addEventListener('click', signOut);
 
 // Горячие клавиши
