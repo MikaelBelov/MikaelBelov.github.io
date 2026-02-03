@@ -29,6 +29,92 @@ function jsonp(url) {
     });
 }
 
+// Показать ошибку регистрации
+function showRegisterError(message) {
+    const errorDiv = document.getElementById('registerErrorMessage');
+    errorDiv.textContent = message;
+    errorDiv.classList.add('active');
+}
+
+// Скрыть ошибку регистрации
+function hideRegisterError() {
+    const errorDiv = document.getElementById('registerErrorMessage');
+    errorDiv.classList.remove('active');
+}
+
+// Показать форму регистрации
+function showRegisterOverlay() {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('registerOverlay').classList.remove('hidden');
+    document.getElementById('regUsername').focus();
+}
+
+// Показать форму входа
+function showLoginOverlay() {
+    document.getElementById('registerOverlay').classList.add('hidden');
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('username').focus();
+}
+
+// Регистрация
+async function handleRegister(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('regUsername').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const name = document.getElementById('regName').value.trim();
+    
+    if (!username || !password || !name) {
+        showRegisterError('Заполните все поля');
+        return;
+    }
+    
+    if (username.length < 3) {
+        showRegisterError('Логин должен быть минимум 3 символа');
+        return;
+    }
+    
+    if (password.length < 4) {
+        showRegisterError('Пароль должен быть минимум 4 символа');
+        return;
+    }
+    
+    const registerBtn = document.getElementById('registerBtn');
+    registerBtn.disabled = true;
+    registerBtn.textContent = 'Регистрация...';
+    hideRegisterError();
+    
+    try {
+        // Регистрируем через Apps Script
+        const url = `${CONFIG.appsScriptUrl}?action=register&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&name=${encodeURIComponent(name)}`;
+        const result = await jsonp(url);
+        
+        if (result.success && result.user) {
+            currentUser = result.user;
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            
+            console.log('👤 Зарегистрирован пользователь:', currentUser.name);
+            
+            hideRegisterOverlay();
+            updateUIAfterLogin();
+            loadUserProgress();
+        } else {
+            showRegisterError(result.error || 'Ошибка регистрации');
+        }
+    } catch (error) {
+        console.error('Ошибка регистрации:', error);
+        showRegisterError('Ошибка соединения с сервером');
+    } finally {
+        registerBtn.disabled = false;
+        registerBtn.textContent = 'Зарегистрироваться';
+    }
+}
+
+// Скрыть форму регистрации
+function hideRegisterOverlay() {
+    document.getElementById('registerOverlay').classList.add('hidden');
+}
+
 // Показать ошибку входа
 function showLoginError(message) {
     const errorDiv = document.getElementById('errorMessage');
@@ -453,6 +539,15 @@ function escapeHtml(text) {
 // Обработчики событий
 document.getElementById('showLoginBtn').addEventListener('click', showLoginOverlay);
 document.getElementById('loginForm').addEventListener('submit', handleLogin);
+document.getElementById('registerForm').addEventListener('submit', handleRegister);
+document.getElementById('showRegisterLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    showRegisterOverlay();
+});
+document.getElementById('showLoginLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    showLoginOverlay();
+});
 document.getElementById('signOutBtn').addEventListener('click', signOut);
 document.getElementById('saveBtn').addEventListener('click', handleSave);
 document.getElementById('skipBtn').addEventListener('click', handleSkip);
