@@ -32,6 +32,29 @@
             color: #212529;
         }
         
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .auth-btn {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background: #fff;
+            color: #495057;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .auth-btn:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
         .user-info {
             display: none;
             align-items: center;
@@ -368,9 +391,17 @@
     <!-- Верхняя панель -->
     <div class="top-bar">
         <h1>Аннотация статей - Шанинка</h1>
-        <div id="userInfo" class="user-info">
-            <span id="userName" class="user-name"></span>
-            <button id="signOutBtn" class="sign-out-btn">Выйти</button>
+        <div class="auth-section">
+            <!-- Кнопка "Войти" (показывается когда не залогинен) -->
+            <button id="showLoginBtn" class="auth-btn" style="display: flex;">
+                Войти
+            </button>
+            
+            <!-- Информация о пользователе (показывается после входа) -->
+            <div id="userInfo" class="user-info">
+                <span id="userName" class="user-name"></span>
+                <button id="signOutBtn" class="sign-out-btn">Выйти</button>
+            </div>
         </div>
     </div>
 
@@ -413,7 +444,7 @@
             </div>
             
             <div class="metadata" id="metadata">
-                <div class="loading">Войдите для начала работы</div>
+                <div class="loading">Нажмите "Войти" для начала работы</div>
             </div>
             
             <div class="annotation-form" id="annotationForm" style="display: none;">
@@ -446,6 +477,6 @@
     </div>
 
     <script src="config.js"></script>
-    <script src="app.js"></script>
+    <script src="app-simple-auth.js"></script>
 </body>
 </html>
