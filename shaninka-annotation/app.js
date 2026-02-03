@@ -1,13 +1,10 @@
-// 🔐 Приложение с Google OAuth - только кнопка справа вверху
+// 🔐 Простая аутентификация логин/пароль
 
 let articlesData = [];
 let currentItem = null;
 let annotatedIds = new Set();
 let currentUser = null;
 let currentIndex = 0;
-
-// Google OAuth Client ID
-const GOOGLE_CLIENT_ID = CONFIG.googleClientId;
 
 // JSONP helper
 function jsonp(url) {
@@ -32,101 +29,119 @@ function jsonp(url) {
     });
 }
 
-// Инициализация Google Sign-In
-function initGoogleSignIn() {
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
-        auto_select: true
-    });
-    
-    checkStoredSession();
+// Показать ошибку входа
+function showLoginError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.textContent = message;
+    errorDiv.classList.add('active');
 }
 
-// Обработка ответа от Google
-function handleCredentialResponse(response) {
-    const payload = parseJwt(response.credential);
-    
-    currentUser = {
-        email: payload.email,
-        name: payload.name,
-        picture: payload.picture,
-        sub: payload.sub
-    };
-    
-    localStorage.setItem('google_user', JSON.stringify(currentUser));
-    
-    console.log('👤 Вошёл пользователь:', currentUser.name);
-    
-    updateUIAfterLogin();
-    loadUserProgress();
+// Скрыть ошибку входа
+function hideLoginError() {
+    const errorDiv = document.getElementById('errorMessage');
+    errorDiv.classList.remove('active');
 }
 
-// Парсинг JWT токена
-function parseJwt(token) {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
+// Вход
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    
+    if (!username || !password) {
+        showLoginError('Заполните все поля');
+        return;
+    }
+    
+    const loginBtn = document.getElementById('loginBtn');
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Вход...';
+    hideLoginError();
+    
+    try {
+        // Проверяем логин/пароль через Apps Script
+        const url = `${CONFIG.appsScriptUrl}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+        const result = await jsonp(url);
+        
+        if (result.success && result.user) {
+            currentUser = result.user;
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            
+            console.log('👤 Вошёл пользователь:', currentUser.name);
+            
+            hideLoginOverlay();
+            updateUIAfterLogin();
+            loadUserProgress();
+        } else {
+            showLoginError(result.error || 'Неверный логин или пароль');
+        }
+    } catch (error) {
+        console.error('Ошибка входа:', error);
+        showLoginError('Ошибка соединения с сервером');
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Войти';
+    }
+}
+
+// Показать форму входа
+function showLoginOverlay() {
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('username').focus();
+}
+
+// Скрыть форму входа
+function hideLoginOverlay() {
+    document.getElementById('loginOverlay').classList.add('hidden');
+}
+
+// Обновить UI после входа
+function updateUIAfterLogin() {
+    document.getElementById('showLoginBtn').style.display = 'none';
+    document.getElementById('userInfo').classList.add('active');
+    document.getElementById('userName').textContent = currentUser.name;
+}
+
+// Выход
+function signOut() {
+    currentUser = null;
+    localStorage.removeItem('current_user');
+    
+    document.getElementById('showLoginBtn').style.display = 'flex';
+    document.getElementById('userInfo').classList.remove('active');
+    
+    articlesData = [];
+    annotatedIds.clear();
+    
+    document.getElementById('metadata').innerHTML = '<div class="loading">Нажмите "Войти" для начала работы</div>';
+    document.getElementById('annotationForm').style.display = 'none';
+    document.getElementById('articleFrame').src = 'about:blank';
+    
+    // Очищаем форму
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    hideLoginError();
+    
+    console.log('👋 Вышли из системы');
 }
 
 // Проверка сохранённой сессии
 function checkStoredSession() {
-    const stored = localStorage.getItem('google_user');
+    const stored = localStorage.getItem('current_user');
     if (stored) {
         try {
             currentUser = JSON.parse(stored);
             console.log('👤 Восстановлена сессия:', currentUser.name);
             updateUIAfterLogin();
             loadUserProgress();
+            return true;
         } catch (e) {
             console.error('Ошибка восстановления сессии:', e);
-            // Просто ждём пока пользователь нажмёт кнопку
+            localStorage.removeItem('current_user');
         }
     }
-    // Если нет сессии - просто ждём пока пользователь нажмёт кнопку
-}
-
-// Обновить UI после входа
-function updateUIAfterLogin() {
-    document.getElementById('signInBtn').style.display = 'none';
-    document.getElementById('userInfo').classList.add('active');
-    document.getElementById('userName').textContent = currentUser.name;
-    document.getElementById('userAvatar').src = currentUser.picture;
-}
-
-// Выход
-function signOut() {
-    currentUser = null;
-    localStorage.removeItem('google_user');
-    
-    document.getElementById('signInBtn').style.display = 'flex';
-    document.getElementById('userInfo').classList.remove('active');
-    
-    articlesData = [];
-    annotatedIds.clear();
-    
-    // Очищаем интерфейс
-    document.getElementById('metadata').innerHTML = '<div class="loading">Нажмите "Войти через Google" для начала работы</div>';
-    document.getElementById('annotationForm').style.display = 'none';
-    document.getElementById('articleFrame').src = 'about:blank';
-    
-    console.log('👋 Вышли из системы');
-}
-
-// Вход - показываем Google popup
-function signIn() {
-    google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed()) {
-            console.log('Google Sign-In не может показать окно');
-            alert('Не удалось показать окно входа. Проверьте настройки браузера.');
-        }
-        if (notification.isSkippedMoment()) {
-            console.log('Пользователь закрыл окно входа');
-        }
-    });
+    return false;
 }
 
 // Получение IP адреса
@@ -170,7 +185,7 @@ async function loadUserProgress() {
         const dataLoaded = await loadDataFromAppsScript();
         if (!dataLoaded) return;
         
-        const url = `${CONFIG.appsScriptUrl}?action=getUserProgress&userId=${encodeURIComponent(currentUser.sub)}`;
+        const url = `${CONFIG.appsScriptUrl}?action=getUserProgress&userId=${encodeURIComponent(currentUser.username)}`;
         const result = await jsonp(url);
         
         if (result.success && result.data) {
@@ -200,8 +215,7 @@ async function saveUserProgress() {
             },
             body: JSON.stringify({
                 action: 'saveProgress',
-                userId: currentUser.sub,
-                userEmail: currentUser.email,
+                userId: currentUser.username,
                 userName: currentUser.name,
                 annotated_ids: [...annotatedIds],
                 last_index: currentIndex
@@ -235,8 +249,7 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation) {
                 item_id: itemId,
                 word_mention: wordMention,
                 author_affiliation: authorAffiliation,
-                user_id: currentUser.sub,
-                user_email: currentUser.email,
+                user_id: currentUser.username,
                 user_name: currentUser.name,
                 ip: ip,
                 timestamp: timestamp
@@ -438,10 +451,11 @@ function escapeHtml(text) {
 }
 
 // Обработчики событий
+document.getElementById('showLoginBtn').addEventListener('click', showLoginOverlay);
+document.getElementById('loginForm').addEventListener('submit', handleLogin);
+document.getElementById('signOutBtn').addEventListener('click', signOut);
 document.getElementById('saveBtn').addEventListener('click', handleSave);
 document.getElementById('skipBtn').addEventListener('click', handleSkip);
-document.getElementById('signInBtn').addEventListener('click', signIn);
-document.getElementById('signOutBtn').addEventListener('click', signOut);
 
 // Горячие клавиши
 document.addEventListener('keydown', (e) => {
@@ -465,10 +479,9 @@ window.addEventListener('beforeunload', () => {
 
 // Инициализация при загрузке
 window.addEventListener('load', () => {
-    if (typeof google !== 'undefined') {
-        initGoogleSignIn();
-    } else {
-        console.error('Google Sign-In library not loaded');
-        showError('Ошибка загрузки Google Sign-In');
+    // Проверяем есть ли сохранённая сессия
+    if (!checkStoredSession()) {
+        // Нет сессии - просто ждём пока нажмут кнопку "Войти"
+        console.log('👋 Нажмите "Войти" для начала работы');
     }
 });
