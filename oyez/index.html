@@ -754,23 +754,6 @@
             
             openAddToCollectionModal(year, caseName, mention);
         }
-            if (DATA[year]) return DATA[year];
-            
-            try {
-                const response = await fetch(`data/${year}.json`);
-                if (!response.ok) {
-                    DATA[year] = {};
-                    return {};
-                }
-                const data = await response.json();
-                DATA[year] = data;
-                return data;
-            } catch (error) {
-                console.error(`Error loading ${year}:`, error);
-                DATA[year] = {};
-                return {};
-            }
-        }
 
         // Collections functions
         function saveCollections() {
@@ -1078,6 +1061,7 @@
                 }, 100);
             }
         }
+
         // Рендер страницы коллекций
         function renderCollectionsPage(app) {
             const collectionNames = Object.keys(collections);
