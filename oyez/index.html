@@ -738,6 +738,40 @@
             }
         }
 
+        // Обработчик клика на кнопку добавления в коллекцию
+        function addMentionButtonClick(button, year, caseName, mentionIdx) {
+            const yearData = DATA[year];
+            if (!yearData || !yearData[caseName]) {
+                alert('Error: Case data not found');
+                return;
+            }
+            
+            const mention = yearData[caseName][mentionIdx];
+            if (!mention) {
+                alert('Error: Mention not found');
+                return;
+            }
+            
+            openAddToCollectionModal(year, caseName, mention);
+        }
+            if (DATA[year]) return DATA[year];
+            
+            try {
+                const response = await fetch(`data/${year}.json`);
+                if (!response.ok) {
+                    DATA[year] = {};
+                    return {};
+                }
+                const data = await response.json();
+                DATA[year] = data;
+                return data;
+            } catch (error) {
+                console.error(`Error loading ${year}:`, error);
+                DATA[year] = {};
+                return {};
+            }
+        }
+
         // Collections functions
         function saveCollections() {
             localStorage.setItem('collections', JSON.stringify(collections));
@@ -993,9 +1027,7 @@
                                 <span class="toggle-icon">▼</span>
                             </div>
                             <div class="case-content">
-                                ${mentions.map((mention, idx) => {
-                                    const mentionJson = JSON.stringify(mention).replace(/"/g, '&quot;');
-                                    return `
+                                ${mentions.map((mention, idx) => `
                                     <div class="mention">
                                         <div class="mention-header">
                                             <span class="mention-badge speaker">
@@ -1008,7 +1040,10 @@
                                                 Turn ${mention.turn_index}/${mention.total_turns}
                                             </span>
                                             <button class="add-mention-to-collection-btn" 
-                                                    onclick='openAddToCollectionModal("${year}", "${caseName.replace(/'/g, "\\'")}", ${mentionJson})'>
+                                                    data-year="${year}"
+                                                    data-case="${caseName}"
+                                                    data-mention-idx="${idx}"
+                                                    onclick="addMentionButtonClick(this, '${year}', '${caseName}', ${idx})">
                                                 + Collection
                                             </button>
                                         </div>
@@ -1027,7 +1062,7 @@
                                             `).join('')}
                                         </div>
                                     </div>
-                                `}).join('')}
+                                `).join('')}
                             </div>
                         </div>
                     `;
@@ -1043,7 +1078,6 @@
                 }, 100);
             }
         }
-
         // Рендер страницы коллекций
         function renderCollectionsPage(app) {
             const collectionNames = Object.keys(collections);
