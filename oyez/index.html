@@ -66,6 +66,11 @@
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
         
+        .year-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         /* Back button */
         .back-button {
             display: inline-block;
@@ -390,53 +395,77 @@
     <div class="container" id="app">
         <div class="loading">
             <div class="spinner"></div>
-            Loading data...
+            Loading...
         </div>
     </div>
 
     <script>
-        let DATA = null;
+        let DATA = {}; // Кэш загруженных данных по годам
+        let availableYears = [];
 
-        // Загрузка данных
-        async function loadData() {
+        // Загрузка списка доступных годов
+        async function loadYearsList() {
             try {
-                const response = await fetch('data.json');
-                DATA = await response.json();
-                render();
+                const response = await fetch('data/years.json');
+                availableYears = await response.json();
+                return availableYears;
             } catch (error) {
-                document.getElementById('app').innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">⚠️</div>
-                        <h2>Error loading data</h2>
-                        <p>Please make sure data.json is in the same directory.</p>
-                        <p style="color: #ef4444; margin-top: 10px;">${error.message}</p>
-                    </div>
-                `;
+                console.error('Error loading years list:', error);
+                // Fallback: генерируем список годов
+                availableYears = Array.from({length: 2024 - 1955 + 1}, (_, i) => String(1955 + i));
+                return availableYears;
             }
         }
 
-        // Роутинг
-        function render() {
-            if (!DATA) return;
+        // Загрузка данных конкретного года
+        async function loadYearData(year) {
+            if (DATA[year]) return DATA[year]; // Уже загружено
             
+            try {
+                const response = await fetch(`data/${year}.json`);
+                if (!response.ok) {
+                    DATA[year] = {}; // Нет данных за этот год
+                    return {};
+                }
+                const data = await response.json();
+                DATA[year] = data;
+                return data;
+            } catch (error) {
+                console.error(`Error loading ${year}:`, error);
+                DATA[year] = {};
+                return {};
+            }
+        }
+
+        // Главный роутер
+        async function render() {
             const hash = window.location.hash.slice(1);
             const app = document.getElementById('app');
             
             if (!hash) {
+                // Главная страница - список годов
+                if (availableYears.length === 0) {
+                    app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading years...</div>';
+                    await loadYearsList();
+                }
                 renderYearList(app);
             } else {
+                // Страница года
                 const [year, caseSlug] = hash.split('/');
+                
+                // Загружаем данные года если ещё нет
+                if (!DATA[year]) {
+                    app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading data...</div>';
+                    await loadYearData(year);
+                }
+                
                 renderYearPage(app, year, caseSlug);
             }
         }
 
-        // Главная страница - список годов
+        // Рендер списка годов
         function renderYearList(app) {
-            const years = Object.keys(DATA).sort().reverse();
-            const totalCases = years.reduce((sum, year) => sum + Object.keys(DATA[year]).length, 0);
-            const totalMentions = years.reduce((sum, year) => {
-                return sum + Object.values(DATA[year]).reduce((caseSum, cases) => caseSum + cases.length, 0);
-            }, 0);
+            const years = availableYears.sort().reverse();
             
             app.innerHTML = `
                 <h1>Supreme Court Justice Citations</h1>
@@ -445,15 +474,15 @@
                 <div class="stats">
                     <div class="stat-card">
                         <div class="stat-number">${years.length}</div>
-                        <div class="stat-label">Years</div>
+                        <div class="stat-label">Years Available</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">${totalCases}</div>
-                        <div class="stat-label">Cases</div>
+                        <div class="stat-number">1955-2024</div>
+                        <div class="stat-label">Date Range</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-number">${totalMentions}</div>
-                        <div class="stat-label">Citations</div>
+                        <div class="stat-number">~70</div>
+                        <div class="stat-label">Years of Data</div>
                     </div>
                 </div>
                 
@@ -468,16 +497,17 @@
             `;
         }
 
-        // Страница года с кейсами
+        // Рендер страницы года
         function renderYearPage(app, year, expandedCaseSlug) {
             const yearData = DATA[year];
             
-            if (!yearData) {
+            if (!yearData || Object.keys(yearData).length === 0) {
                 app.innerHTML = `
+                    <a href="#" class="back-button">← Back to years</a>
                     <div class="empty-state">
                         <div class="empty-state-icon">📅</div>
-                        <h2>Year not found</h2>
-                        <a href="#" class="back-button">← Back to years</a>
+                        <h2>No data for ${year}</h2>
+                        <p>There are no citations recorded for this year.</p>
                     </div>
                 `;
                 return;
@@ -569,7 +599,7 @@
             }
         }
 
-        // Toggle case expand/collapse
+        // Toggle case
         function toggleCase(year, caseSlug) {
             const currentHash = window.location.hash.slice(1);
             if (currentHash.includes(caseSlug)) {
@@ -581,7 +611,7 @@
 
         // Инициализация
         window.addEventListener('hashchange', render);
-        loadData();
+        render();
     </script>
 </body>
 </html>
