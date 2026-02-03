@@ -500,54 +500,48 @@ async function handleSave() {
     
     const saveBtn = document.getElementById('saveBtn');
     const skipBtn = document.getElementById('skipBtn');
-    saveBtn.disabled = true;
-    skipBtn.disabled = true;
-    saveBtn.textContent = 'Сохранение...';
     
-    try {
-        await saveAnnotation(currentItem.id, wordMention, authorAffiliation);
-        
-        annotatedIds.add(currentItem.id);
-        await saveUserProgress();
-        
-        setTimeout(() => {
-            loadNextItem();
-        }, 500);
-        
-    } catch (error) {
-        alert(error.message);
-    } finally {
-        saveBtn.disabled = false;
-        skipBtn.disabled = false;
-        saveBtn.textContent = 'Сохранить';
-    }
+    // Запоминаем текущую статью
+    const itemToSave = currentItem;
+    
+    // Добавляем в annotatedIds СРАЗУ
+    annotatedIds.add(currentItem.id);
+    
+    // МГНОВЕННО переключаемся на следующую
+    loadNextItem();
+    
+    // Сохраняем В ФОНЕ (без ожидания)
+    saveAnnotation(itemToSave.id, wordMention, authorAffiliation)
+        .then(() => {
+            return saveUserProgress();
+        })
+        .catch(error => {
+            console.error('Ошибка фонового сохранения:', error);
+            // Не показываем ошибку пользователю - не прерываем работу
+        });
 }
 
 // Пропустить элемент
 async function handleSkip() {
     if (!currentItem || !currentUser) return;
     
-    const skipBtn = document.getElementById('skipBtn');
-    const saveBtn = document.getElementById('saveBtn');
-    skipBtn.disabled = true;
-    saveBtn.disabled = true;
-    skipBtn.textContent = 'Пропуск...';
+    // Запоминаем текущую статью
+    const itemToSave = currentItem;
     
-    try {
-        await saveAnnotation(currentItem.id, false, false);
-        annotatedIds.add(currentItem.id);
-        await saveUserProgress();
-        
-        setTimeout(() => {
-            loadNextItem();
-        }, 500);
-    } catch (error) {
-        alert(error.message);
-    } finally {
-        skipBtn.disabled = false;
-        saveBtn.disabled = false;
-        skipBtn.textContent = 'Пропустить';
-    }
+    // Добавляем в annotatedIds СРАЗУ (пропущено = тоже размечено)
+    annotatedIds.add(currentItem.id);
+    
+    // МГНОВЕННО переключаемся на следующую
+    loadNextItem();
+    
+    // Сохраняем пропуск В ФОНЕ
+    saveAnnotation(itemToSave.id, false, false)
+        .then(() => {
+            return saveUserProgress();
+        })
+        .catch(error => {
+            console.error('Ошибка фонового сохранения пропуска:', error);
+        });
 }
 
 // Сообщение о завершении
