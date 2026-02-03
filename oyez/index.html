@@ -98,11 +98,6 @@
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
         
-        .year-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
         /* Back button */
         .back-button {
             display: inline-block;
@@ -157,7 +152,6 @@
             border-radius: 10px;
             overflow: hidden;
             transition: all 0.3s ease;
-            position: relative;
         }
         
         .case:hover {
@@ -179,16 +173,6 @@
             background: #f3f4f6; 
         }
         
-        .case-header-content {
-            flex: 1;
-        }
-        
-        .case-header-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
         .case-title { 
             font-size: 20px; 
             font-weight: 600; 
@@ -208,23 +192,6 @@
             display: flex;
             align-items: center;
             gap: 5px;
-        }
-        
-        .add-to-collection-btn {
-            padding: 8px 16px;
-            background: #10b981;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        
-        .add-to-collection-btn:hover {
-            background: #059669;
-            transform: translateY(-1px);
         }
         
         .toggle-icon { 
@@ -256,6 +223,7 @@
             border-radius: 10px;
             background: #fafafa;
             transition: all 0.3s ease;
+            position: relative;
         }
         
         .mention:hover {
@@ -292,6 +260,23 @@
         .turn-info { 
             background: #e5e7eb; 
             color: #374151;
+        }
+        
+        .add-mention-to-collection-btn {
+            padding: 6px 12px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .add-mention-to-collection-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
         }
         
         .mention-title {
@@ -552,28 +537,47 @@
             background: #059669;
         }
         
-        .collection-case {
+        .collection-mention-item {
             padding: 15px;
             background: #f9fafb;
             border-radius: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .collection-mention-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            margin-bottom: 10px;
         }
         
-        .collection-case-name {
+        .collection-mention-meta {
+            flex: 1;
+        }
+        
+        .collection-mention-case {
             font-weight: 600;
             color: #1f2937;
+            margin-bottom: 5px;
         }
         
-        .collection-case-year {
-            color: #6b7280;
+        .collection-mention-speakers {
             font-size: 14px;
-            margin-left: 10px;
+            color: #6b7280;
         }
         
-        .remove-case-btn {
+        .collection-mention-text {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #f59e0b;
+            margin-bottom: 10px;
+            font-style: italic;
+            color: #374151;
+        }
+        
+        .remove-mention-btn {
             padding: 6px 12px;
             background: #ef4444;
             color: white;
@@ -584,7 +588,7 @@
             font-weight: 600;
         }
         
-        .remove-case-btn:hover {
+        .remove-mention-btn:hover {
             background: #dc2626;
         }
         
@@ -651,13 +655,6 @@
             
             .case-header {
                 padding: 15px;
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .case-header-actions {
-                width: 100%;
-                justify-content: space-between;
             }
             
             .case-title {
@@ -706,7 +703,7 @@
         let DATA = {};
         let availableYears = [];
         let collections = JSON.parse(localStorage.getItem('collections') || '{}');
-        let currentCaseToAdd = null;
+        let currentMentionToAdd = null;
 
         // Загрузка списка доступных годов
         async function loadYearsList() {
@@ -746,24 +743,40 @@
             localStorage.setItem('collections', JSON.stringify(collections));
         }
 
-        function openAddToCollectionModal(year, caseName) {
-            currentCaseToAdd = { year, caseName };
+        function generateMentionId(year, caseName, mention) {
+            return `${year}::${caseName}::${mention.speaker}::${mention.mentioned}::${mention.turn_index}`;
+        }
+
+        function openAddToCollectionModal(year, caseName, mention) {
+            currentMentionToAdd = { year, caseName, mention };
             const modal = document.getElementById('collectionModal');
             const modalBody = document.getElementById('modalBody');
             
             const collectionNames = Object.keys(collections);
             
+            // Находим текст упоминания
+            const mentionText = mention.context.find(t => t.position === 'mention')?.text || '';
+            
             modalBody.innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <strong>Case:</strong> ${caseName} (${year})
+                <div style="margin-bottom: 20px; padding: 12px; background: #f3f4f6; border-radius: 8px;">
+                    <strong style="display: block; margin-bottom: 5px;">Reference:</strong>
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">
+                        ${mention.speaker} → ${mention.mentioned}
+                    </div>
+                    <div style="font-size: 13px; color: #374151; font-style: italic; border-left: 3px solid #f59e0b; padding-left: 10px;">
+                        "${mentionText.substring(0, 100)}${mentionText.length > 100 ? '...' : ''}"
+                    </div>
+                    <div style="font-size: 13px; color: #6b7280; margin-top: 5px;">
+                        ${caseName} (${year})
+                    </div>
                 </div>
                 
                 ${collectionNames.length > 0 ? `
                     <div style="margin-bottom: 20px;">
                         <strong>Add to existing collection:</strong>
                         ${collectionNames.map(name => `
-                            <div class="collection-option" onclick="addCaseToCollection('${name}')">
-                                ${name} (${collections[name].cases.length} cases)
+                            <div class="collection-option" onclick="addMentionToCollection('${name.replace(/'/g, "\\'")}')">
+                                ${name} (${collections[name].mentions.length} references)
                             </div>
                         `).join('')}
                     </div>
@@ -783,21 +796,35 @@
 
         function closeModal() {
             document.getElementById('collectionModal').classList.remove('active');
-            currentCaseToAdd = null;
+            currentMentionToAdd = null;
         }
 
-        function addCaseToCollection(collectionName) {
-            if (!currentCaseToAdd) return;
+        function addMentionToCollection(collectionName) {
+            if (!currentMentionToAdd) return;
             
-            const { year, caseName } = currentCaseToAdd;
-            const caseId = `${year}::${caseName}`;
+            const { year, caseName, mention } = currentMentionToAdd;
+            const mentionId = generateMentionId(year, caseName, mention);
             
-            if (!collections[collectionName].cases.includes(caseId)) {
-                collections[collectionName].cases.push(caseId);
+            // Проверяем, есть ли уже это упоминание
+            const exists = collections[collectionName].mentions.some(m => m.id === mentionId);
+            
+            if (!exists) {
+                collections[collectionName].mentions.push({
+                    id: mentionId,
+                    year,
+                    caseName,
+                    speaker: mention.speaker,
+                    mentioned: mention.mentioned,
+                    mentionText: mention.context.find(t => t.position === 'mention')?.text || '',
+                    turnIndex: mention.turn_index,
+                    title: mention.title,
+                    urlTitle: mention.url_title,
+                    fullMention: mention
+                });
                 saveCollections();
                 alert(`Added to "${collectionName}"`);
             } else {
-                alert('Case already in this collection');
+                alert('This reference is already in this collection');
             }
             
             closeModal();
@@ -818,11 +845,11 @@
             }
             
             collections[name] = {
-                cases: [],
+                mentions: [],
                 notes: ''
             };
             
-            addCaseToCollection(name);
+            addMentionToCollection(name);
         }
 
         function deleteCollection(name) {
@@ -833,8 +860,8 @@
             }
         }
 
-        function removeCaseFromCollection(collectionName, caseId) {
-            collections[collectionName].cases = collections[collectionName].cases.filter(c => c !== caseId);
+        function removeMentionFromCollection(collectionName, mentionId) {
+            collections[collectionName].mentions = collections[collectionName].mentions.filter(m => m.id !== mentionId);
             saveCollections();
             render();
         }
@@ -948,8 +975,8 @@
                     
                     return `
                         <div class="case ${isExpanded ? 'expanded' : ''}" id="${caseSlug}">
-                            <div class="case-header">
-                                <div class="case-header-content" onclick="toggleCase('${year}', '${caseSlug}')">
+                            <div class="case-header" onclick="toggleCase('${year}', '${caseSlug}')">
+                                <div>
                                     <div class="case-title">${caseName}</div>
                                     <div class="case-meta">
                                         <span class="case-meta-item">
@@ -963,15 +990,12 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="case-header-actions">
-                                    <button class="add-to-collection-btn" onclick="event.stopPropagation(); openAddToCollectionModal('${year}', '${caseName.replace(/'/g, "\\'")}')">
-                                        + Collection
-                                    </button>
-                                    <span class="toggle-icon" onclick="toggleCase('${year}', '${caseSlug}')">▼</span>
-                                </div>
+                                <span class="toggle-icon">▼</span>
                             </div>
                             <div class="case-content">
-                                ${mentions.map((mention, idx) => `
+                                ${mentions.map((mention, idx) => {
+                                    const mentionJson = JSON.stringify(mention).replace(/"/g, '&quot;');
+                                    return `
                                     <div class="mention">
                                         <div class="mention-header">
                                             <span class="mention-badge speaker">
@@ -983,13 +1007,15 @@
                                             <span class="mention-badge turn-info">
                                                 Turn ${mention.turn_index}/${mention.total_turns}
                                             </span>
+                                            <button class="add-mention-to-collection-btn" 
+                                                    onclick='openAddToCollectionModal("${year}", "${caseName.replace(/'/g, "\\'")}", ${mentionJson})'>
+                                                + Collection
+                                            </button>
                                         </div>
                                         
                                         <div class="mention-title">
-                                            <strong>${mention.title}</strong>
-                                            <a href="${mention.url_title}" target="_blank">
-                                                🎧 Listen on Oyez
-                                            </a>
+                                            <strong>${mention.title || 'Oral Argument'}</strong>
+                                            ${mention.url_title ? `<a href="${mention.url_title}" target="_blank">🎧 Listen on Oyez</a>` : ''}
                                         </div>
                                         
                                         <div class="transcript">
@@ -1001,7 +1027,7 @@
                                             `).join('')}
                                         </div>
                                     </div>
-                                `).join('')}
+                                `}).join('')}
                             </div>
                         </div>
                     `;
@@ -1026,13 +1052,13 @@
                 <a href="#" class="back-button">← Back to years</a>
                 
                 <h1>My Collections</h1>
-                <p class="subtitle">Organize and annotate cases for your research</p>
+                <p class="subtitle">Organize and annotate references for your research</p>
                 
                 ${collectionNames.length === 0 ? `
                     <div class="empty-state">
                         <div class="empty-state-icon">📚</div>
                         <h2>No collections yet</h2>
-                        <p>Start adding cases to collections to organize your research.</p>
+                        <p>Start adding references to collections to organize your research.</p>
                     </div>
                 ` : collectionNames.map(name => {
                     const collection = collections[name];
@@ -1042,7 +1068,7 @@
                             <div class="collection-header">
                                 <div class="collection-name">${name}</div>
                                 <div class="collection-actions">
-                                    <button class="collection-btn delete-collection-btn" onclick="deleteCollection('${name}')">
+                                    <button class="collection-btn delete-collection-btn" onclick="deleteCollection('${name.replace(/'/g, "\\'")}')">
                                         Delete
                                     </button>
                                 </div>
@@ -1054,30 +1080,41 @@
                                 placeholder="Add your notes here..."
                             >${collection.notes}</textarea>
                             
-                            <button class="save-notes-btn" onclick="saveCollectionNotes('${name}')">
+                            <button class="save-notes-btn" onclick="saveCollectionNotes('${name.replace(/'/g, "\\'")}')">
                                 Save Notes
                             </button>
                             
                             <div>
-                                <strong style="display: block; margin-bottom: 10px; color: #374151;">
-                                    Cases (${collection.cases.length}):
+                                <strong style="display: block; margin-bottom: 15px; color: #374151;">
+                                    References (${collection.mentions.length}):
                                 </strong>
-                                ${collection.cases.length === 0 ? 
-                                    '<p style="color: #6b7280;">No cases in this collection</p>' :
-                                    collection.cases.map(caseId => {
-                                        const [year, caseName] = caseId.split('::');
-                                        return `
-                                            <div class="collection-case">
-                                                <div>
-                                                    <span class="collection-case-name">${caseName}</span>
-                                                    <span class="collection-case-year">(${year})</span>
+                                ${collection.mentions.length === 0 ? 
+                                    '<p style="color: #6b7280;">No references in this collection</p>' :
+                                    collection.mentions.map(m => `
+                                        <div class="collection-mention-item">
+                                            <div class="collection-mention-header">
+                                                <div class="collection-mention-meta">
+                                                    <div class="collection-mention-case">
+                                                        ${m.caseName} <span style="color: #6b7280; font-weight: normal;">(${m.year})</span>
+                                                    </div>
+                                                    <div class="collection-mention-speakers">
+                                                        ${m.speaker} → ${m.mentioned}
+                                                    </div>
                                                 </div>
-                                                <button class="remove-case-btn" onclick="removeCaseFromCollection('${name}', '${caseId}')">
+                                                <button class="remove-mention-btn" onclick="removeMentionFromCollection('${name.replace(/'/g, "\\'")}', '${m.id}')">
                                                     Remove
                                                 </button>
                                             </div>
-                                        `;
-                                    }).join('')
+                                            <div class="collection-mention-text">
+                                                "${m.mentionText}"
+                                            </div>
+                                            ${m.urlTitle ? `
+                                                <a href="${m.urlTitle}" target="_blank" style="color: #667eea; font-size: 13px; text-decoration: none;">
+                                                    🎧 Listen on Oyez
+                                                </a>
+                                            ` : ''}
+                                        </div>
+                                    `).join('')
                                 }
                             </div>
                         </div>
