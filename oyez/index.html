@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supreme Court Justice Citations</title>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 { 
+            margin-bottom: 30px; 
+            color: #1f2937;
+            font-size: 36px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+        
+        /* Список годов */
+        .year-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .year-button { 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .year-button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        /* Back button */
+        .back-button {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 12px 24px;
+            background: #6b7280;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .back-button:hover { 
+            background: #4b5563;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Кейсы */
+        .case { 
+            border: 2px solid #e5e7eb; 
+            margin-bottom: 20px; 
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .case:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .case-header { 
+            padding: 20px 25px; 
+            background: #f9fafb; 
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .case-header:hover { 
+            background: #f3f4f6; 
+        }
+        
+        .case-title { 
+            font-size: 20px; 
+            font-weight: 600; 
+            color: #111827;
+            margin-bottom: 5px;
+        }
+        
+        .case-meta { 
+            font-size: 14px; 
+            color: #6b7280;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .case-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .toggle-icon { 
+            font-size: 24px; 
+            color: #667eea;
+            transition: transform 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .case.expanded .toggle-icon { 
+            transform: rotate(180deg); 
+        }
+        
+        .case-content { 
+            display: none; 
+            padding: 25px;
+            background: white;
+        }
+        
+        .case.expanded .case-content { 
+            display: block; 
+        }
+        
+        /* Упоминания */
+        .mention { 
+            padding: 25px; 
+            border: 2px solid #e5e7eb; 
+            margin-bottom: 25px; 
+            border-radius: 10px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+        
+        .mention:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+        
+        .mention-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .mention-badge {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .speaker { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .mentioned { 
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .turn-info { 
+            background: #e5e7eb; 
+            color: #374151;
+        }
+        
+        .mention-title {
+            margin-bottom: 10px;
+            padding: 12px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .mention-title strong {
+            display: block;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .mention-title a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .mention-title a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Транскрипт */
+        .transcript { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .turn { 
+            margin-bottom: 15px; 
+            line-height: 1.7;
+            padding: 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .turn:hover {
+            background: #f9fafb;
+        }
+        
+        .turn-speaker { 
+            font-weight: 700; 
+            color: #1f2937;
+            margin-right: 8px;
+            display: inline-block;
+            min-width: 150px;
+        }
+        
+        .turn-text { 
+            color: #4b5563;
+        }
+        
+        .turn.mention-turn { 
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            padding: 15px; 
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+            margin: 20px 0;
+        }
+        
+        .turn.mention-turn .turn-speaker {
+            color: #92400e;
+        }
+        
+        .turn.mention-turn .turn-text {
+            color: #78350f;
+            font-weight: 500;
+        }
+        
+        .turn.before { 
+            opacity: 0.7;
+        }
+        
+        .turn.after { 
+            opacity: 0.7;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #6b7280;
+            font-size: 18px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 28px;
+            }
+            
+            .year-list {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+            
+            .year-button {
+                padding: 15px;
+                font-size: 16px;
+            }
+            
+            .case-header {
+                padding: 15px;
+            }
+            
+            .case-title {
+                font-size: 18px;
+            }
+            
+            .mention {
+                padding: 15px;
+            }
+            
+            .turn-speaker {
+                display: block;
+                margin-bottom: 5px;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading data...
+        </div>
+    </div>
+
+    <script>
+        let DATA = null;
+
+        // Загрузка данных
+        async function loadData() {
+            try {
+                const response = await fetch('data.json');
+                DATA = await response.json();
+                render();
+            } catch (error) {
+                document.getElementById('app').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h2>Error loading data</h2>
+                        <p>Please make sure data.json is in the same directory.</p>
+                        <p style="color: #ef4444; margin-top: 10px;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Роутинг
+        function render() {
+            if (!DATA) return;
+            
+            const hash = window.location.hash.slice(1);
+            const app = document.getElementById('app');
+            
+            if (!hash) {
+                renderYearList(app);
+            } else {
+                const [year, caseSlug] = hash.split('/');
+                renderYearPage(app, year, caseSlug);
+            }
+        }
+
+        // Главная страница - список годов
+        function renderYearList(app) {
+            const years = Object.keys(DATA).sort().reverse();
+            const totalCases = years.reduce((sum, year) => sum + Object.keys(DATA[year]).length, 0);
+            const totalMentions = years.reduce((sum, year) => {
+                return sum + Object.values(DATA[year]).reduce((caseSum, cases) => caseSum + cases.length, 0);
+            }, 0);
+            
+            app.innerHTML = `
+                <h1>Supreme Court Justice Citations</h1>
+                <p class="subtitle">Explore how Supreme Court justices reference each other during oral arguments</p>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">${years.length}</div>
+                        <div class="stat-label">Years</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${totalCases}</div>
+                        <div class="stat-label">Cases</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${totalMentions}</div>
+                        <div class="stat-label">Citations</div>
+                    </div>
+                </div>
+                
+                <h2 style="margin-bottom: 20px; color: #374151;">Select a Year</h2>
+                <div class="year-list">
+                    ${years.map(year => `
+                        <button class="year-button" onclick="location.hash='${year}'">
+                            ${year}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Страница года с кейсами
+        function renderYearPage(app, year, expandedCaseSlug) {
+            const yearData = DATA[year];
+            
+            if (!yearData) {
+                app.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <h2>Year not found</h2>
+                        <a href="#" class="back-button">← Back to years</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            const cases = Object.entries(yearData);
+            const totalMentions = cases.reduce((sum, [_, mentions]) => sum + mentions.length, 0);
+            
+            app.innerHTML = `
+                <a href="#" class="back-button">← Back to years</a>
+                
+                <h1>${year} Term</h1>
+                <p class="subtitle">${cases.length} case(s) with ${totalMentions} citation(s)</p>
+                
+                ${cases.map(([caseName, mentions]) => {
+                    const caseSlug = caseName.toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^a-z0-9-]/g, '')
+                        .replace(/-+/g, '-');
+                    
+                    const isExpanded = expandedCaseSlug === caseSlug;
+                    const caseUrl = mentions[0]?.case_url || '#';
+                    
+                    return `
+                        <div class="case ${isExpanded ? 'expanded' : ''}" id="${caseSlug}">
+                            <div class="case-header" onclick="toggleCase('${year}', '${caseSlug}')">
+                                <div>
+                                    <div class="case-title">${caseName}</div>
+                                    <div class="case-meta">
+                                        <span class="case-meta-item">
+                                            💬 ${mentions.length} citation${mentions.length !== 1 ? 's' : ''}
+                                        </span>
+                                        <span class="case-meta-item">
+                                            <a href="${caseUrl}" target="_blank" onclick="event.stopPropagation()" 
+                                               style="color: #667eea; text-decoration: none;">
+                                                View on Oyez →
+                                            </a>
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="toggle-icon">▼</span>
+                            </div>
+                            <div class="case-content">
+                                ${mentions.map((mention, idx) => `
+                                    <div class="mention">
+                                        <div class="mention-header">
+                                            <span class="mention-badge speaker">
+                                                Speaker: ${mention.speaker}
+                                            </span>
+                                            <span class="mention-badge mentioned">
+                                                Mentioned: ${mention.mentioned}
+                                            </span>
+                                            <span class="mention-badge turn-info">
+                                                Turn ${mention.turn_index}/${mention.total_turns}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="mention-title">
+                                            <strong>${mention.title}</strong>
+                                            <a href="${mention.url_title}" target="_blank">
+                                                🎧 Listen on Oyez
+                                            </a>
+                                        </div>
+                                        
+                                        <div class="transcript">
+                                            ${mention.context.map(turn => `
+                                                <div class="turn ${turn.position === 'mention' ? 'mention-turn' : turn.position}">
+                                                    <span class="turn-speaker">${turn.speaker || '[Unknown]'}:</span>
+                                                    <span class="turn-text">${turn.text}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+            
+            // Scroll to expanded case
+            if (expandedCaseSlug) {
+                setTimeout(() => {
+                    const element = document.getElementById(expandedCaseSlug);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100);
+            }
+        }
+
+        // Toggle case expand/collapse
+        function toggleCase(year, caseSlug) {
+            const currentHash = window.location.hash.slice(1);
+            if (currentHash.includes(caseSlug)) {
+                location.hash = year;
+            } else {
+                location.hash = `${year}/${caseSlug}`;
+            }
+        }
+
+        // Инициализация
+        window.addEventListener('hashchange', render);
+        loadData();
+    </script>
+</body>
+</html>
