@@ -1,8 +1,8 @@
 // 🔒 Конфигурация БЕЗ публичных API ключей
     // Только URL Apps Script - всё остальное внутри Apps Script!
 const CONFIG = {
-    appsScriptUrl: 'https://script.google.com/macros/s/AKfycby9gqwi4hC1OqMIr2KAVeM8dv0t3CgPP3pNlaOqnBZwmStICPwZ9SXlvce3LOhnvl_Mrg/exec',
+    appsScriptUrl: 'https://script.google.com/macros/s/AKfycbzjGlthyobU2PwVV10OTOyEWNrU9O8K2Fxpg-fG-9FRDAW_QasoZ3skYbVvKY6CiqQgKg/exec',
     
     // Google OAuth Client ID
-    googleClientId: '342111189232-pb3cht7qdnko5idjfk17ae8e74mb3hvk.apps.googleusercontent.com'
+   // googleClientId: '342111189232-pb3cht7qdnko5idjfk17ae8e74mb3hvk.apps.googleusercontent.com'
 };
