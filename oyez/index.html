@@ -27,8 +27,40 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
+        /* Header with collections button */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        
+        .header-left {
+            flex: 1;
+        }
+        
+        .collections-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .collections-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(240, 147, 251, 0.6);
+        }
+        
         h1 { 
-            margin-bottom: 30px; 
+            margin-bottom: 10px; 
             color: #1f2937;
             font-size: 36px;
             font-weight: 700;
@@ -125,6 +157,7 @@
             border-radius: 10px;
             overflow: hidden;
             transition: all 0.3s ease;
+            position: relative;
         }
         
         .case:hover {
@@ -146,6 +179,16 @@
             background: #f3f4f6; 
         }
         
+        .case-header-content {
+            flex: 1;
+        }
+        
+        .case-header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
         .case-title { 
             font-size: 20px; 
             font-weight: 600; 
@@ -165,6 +208,23 @@
             display: flex;
             align-items: center;
             gap: 5px;
+        }
+        
+        .add-to-collection-btn {
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .add-to-collection-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
         }
         
         .toggle-icon { 
@@ -272,7 +332,7 @@
             padding: 12px;
             border-radius: 6px;
             transition: all 0.2s ease;
-            display: flex;  /* Добавь */
+            display: flex;
             gap: 12px; 
         }
         
@@ -309,6 +369,224 @@
             font-weight: 500;
         }
         
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .collection-option {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .collection-option:hover {
+            border-color: #667eea;
+            background: #f9fafb;
+        }
+        
+        .new-collection-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .modal-btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .modal-btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .modal-btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .modal-btn-secondary:hover {
+            background: #d1d5db;
+        }
+        
+        /* Collections page */
+        .collection-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .collection-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .collection-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .collection-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .collection-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .delete-collection-btn {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .delete-collection-btn:hover {
+            background: #dc2626;
+        }
+        
+        .collection-notes {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+        
+        .collection-notes:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .save-notes-btn {
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .save-notes-btn:hover {
+            background: #059669;
+        }
+        
+        .collection-case {
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .collection-case-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .collection-case-year {
+            color: #6b7280;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .remove-case-btn {
+            padding: 6px 12px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .remove-case-btn:hover {
+            background: #dc2626;
+        }
         
         /* Loading */
         .loading {
@@ -352,6 +630,11 @@
                 padding: 20px;
             }
             
+            .header {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
             h1 {
                 font-size: 28px;
             }
@@ -368,6 +651,13 @@
             
             .case-header {
                 padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .case-header-actions {
+                width: 100%;
+                justify-content: space-between;
             }
             
             .case-title {
@@ -378,10 +668,13 @@
                 padding: 15px;
             }
             
+            .turn {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
             .turn-speaker {
-                display: block;
-                margin-bottom: 5px;
-                min-width: auto;
+                width: auto;
             }
         }
     </style>
@@ -394,9 +687,26 @@
         </div>
     </div>
 
+    <!-- Modal for adding to collection -->
+    <div class="modal" id="collectionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add to Collection</h2>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content populated by JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let DATA = {}; // Кэш загруженных данных по годам
+        let DATA = {};
         let availableYears = [];
+        let collections = JSON.parse(localStorage.getItem('collections') || '{}');
+        let currentCaseToAdd = null;
 
         // Загрузка списка доступных годов
         async function loadYearsList() {
@@ -406,7 +716,6 @@
                 return availableYears;
             } catch (error) {
                 console.error('Error loading years list:', error);
-                // Fallback: генерируем список годов
                 availableYears = Array.from({length: 2024 - 1955 + 1}, (_, i) => String(1955 + i));
                 return availableYears;
             }
@@ -414,12 +723,12 @@
 
         // Загрузка данных конкретного года
         async function loadYearData(year) {
-            if (DATA[year]) return DATA[year]; // Уже загружено
+            if (DATA[year]) return DATA[year];
             
             try {
                 const response = await fetch(`data/${year}.json`);
                 if (!response.ok) {
-                    DATA[year] = {}; // Нет данных за этот год
+                    DATA[year] = {};
                     return {};
                 }
                 const data = await response.json();
@@ -432,23 +741,127 @@
             }
         }
 
+        // Collections functions
+        function saveCollections() {
+            localStorage.setItem('collections', JSON.stringify(collections));
+        }
+
+        function openAddToCollectionModal(year, caseName) {
+            currentCaseToAdd = { year, caseName };
+            const modal = document.getElementById('collectionModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            const collectionNames = Object.keys(collections);
+            
+            modalBody.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <strong>Case:</strong> ${caseName} (${year})
+                </div>
+                
+                ${collectionNames.length > 0 ? `
+                    <div style="margin-bottom: 20px;">
+                        <strong>Add to existing collection:</strong>
+                        ${collectionNames.map(name => `
+                            <div class="collection-option" onclick="addCaseToCollection('${name}')">
+                                ${name} (${collections[name].cases.length} cases)
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                
+                <div>
+                    <strong>Or create new collection:</strong>
+                    <input type="text" id="newCollectionName" class="new-collection-input" placeholder="Collection name..." />
+                    <button class="modal-btn modal-btn-primary" style="margin-top: 10px; width: 100%;" onclick="createNewCollection()">
+                        Create & Add
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('collectionModal').classList.remove('active');
+            currentCaseToAdd = null;
+        }
+
+        function addCaseToCollection(collectionName) {
+            if (!currentCaseToAdd) return;
+            
+            const { year, caseName } = currentCaseToAdd;
+            const caseId = `${year}::${caseName}`;
+            
+            if (!collections[collectionName].cases.includes(caseId)) {
+                collections[collectionName].cases.push(caseId);
+                saveCollections();
+                alert(`Added to "${collectionName}"`);
+            } else {
+                alert('Case already in this collection');
+            }
+            
+            closeModal();
+        }
+
+        function createNewCollection() {
+            const nameInput = document.getElementById('newCollectionName');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert('Please enter a collection name');
+                return;
+            }
+            
+            if (collections[name]) {
+                alert('Collection already exists');
+                return;
+            }
+            
+            collections[name] = {
+                cases: [],
+                notes: ''
+            };
+            
+            addCaseToCollection(name);
+        }
+
+        function deleteCollection(name) {
+            if (confirm(`Delete collection "${name}"?`)) {
+                delete collections[name];
+                saveCollections();
+                render();
+            }
+        }
+
+        function removeCaseFromCollection(collectionName, caseId) {
+            collections[collectionName].cases = collections[collectionName].cases.filter(c => c !== caseId);
+            saveCollections();
+            render();
+        }
+
+        function saveCollectionNotes(collectionName) {
+            const textarea = document.getElementById(`notes-${collectionName}`);
+            collections[collectionName].notes = textarea.value;
+            saveCollections();
+            alert('Notes saved!');
+        }
+
         // Главный роутер
         async function render() {
             const hash = window.location.hash.slice(1);
             const app = document.getElementById('app');
             
-            if (!hash) {
-                // Главная страница - список годов
+            if (hash === 'collections') {
+                renderCollectionsPage(app);
+            } else if (!hash) {
                 if (availableYears.length === 0) {
                     app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading years...</div>';
                     await loadYearsList();
                 }
                 renderYearList(app);
             } else {
-                // Страница года
                 const [year, caseSlug] = hash.split('/');
                 
-                // Загружаем данные года если ещё нет
                 if (!DATA[year]) {
                     app.innerHTML = '<div class="loading"><div class="spinner"></div>Loading data...</div>';
                     await loadYearData(year);
@@ -463,8 +876,15 @@
             const years = availableYears.sort().reverse();
             
             app.innerHTML = `
-                <h1>Supreme Court Justice References</h1>
-                <p class="subtitle">Explore how Supreme Court justices reference each other during oral arguments (well, and opinion announcements)</p>
+                <div class="header">
+                    <div class="header-left">
+                        <h1>Supreme Court Justice References</h1>
+                        <p class="subtitle">Explore how Supreme Court justices reference each other during oral arguments (well, and opinion announcements)</p>
+                    </div>
+                    <a href="#collections" class="collections-button">
+                        📚 Collections
+                    </a>
+                </div>
                 
                 <div class="stats">
                     <div class="stat-card">
@@ -528,8 +948,8 @@
                     
                     return `
                         <div class="case ${isExpanded ? 'expanded' : ''}" id="${caseSlug}">
-                            <div class="case-header" onclick="toggleCase('${year}', '${caseSlug}')">
-                                <div>
+                            <div class="case-header">
+                                <div class="case-header-content" onclick="toggleCase('${year}', '${caseSlug}')">
                                     <div class="case-title">${caseName}</div>
                                     <div class="case-meta">
                                         <span class="case-meta-item">
@@ -543,7 +963,12 @@
                                         </span>
                                     </div>
                                 </div>
-                                <span class="toggle-icon">▼</span>
+                                <div class="case-header-actions">
+                                    <button class="add-to-collection-btn" onclick="event.stopPropagation(); openAddToCollectionModal('${year}', '${caseName.replace(/'/g, "\\'")}')">
+                                        + Collection
+                                    </button>
+                                    <span class="toggle-icon" onclick="toggleCase('${year}', '${caseSlug}')">▼</span>
+                                </div>
                             </div>
                             <div class="case-content">
                                 ${mentions.map((mention, idx) => `
@@ -583,7 +1008,6 @@
                 }).join('')}
             `;
             
-            // Scroll to expanded case
             if (expandedCaseSlug) {
                 setTimeout(() => {
                     const element = document.getElementById(expandedCaseSlug);
@@ -592,6 +1016,74 @@
                     }
                 }, 100);
             }
+        }
+
+        // Рендер страницы коллекций
+        function renderCollectionsPage(app) {
+            const collectionNames = Object.keys(collections);
+            
+            app.innerHTML = `
+                <a href="#" class="back-button">← Back to years</a>
+                
+                <h1>My Collections</h1>
+                <p class="subtitle">Organize and annotate cases for your research</p>
+                
+                ${collectionNames.length === 0 ? `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <h2>No collections yet</h2>
+                        <p>Start adding cases to collections to organize your research.</p>
+                    </div>
+                ` : collectionNames.map(name => {
+                    const collection = collections[name];
+                    
+                    return `
+                        <div class="collection-card">
+                            <div class="collection-header">
+                                <div class="collection-name">${name}</div>
+                                <div class="collection-actions">
+                                    <button class="collection-btn delete-collection-btn" onclick="deleteCollection('${name}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <textarea 
+                                id="notes-${name}" 
+                                class="collection-notes" 
+                                placeholder="Add your notes here..."
+                            >${collection.notes}</textarea>
+                            
+                            <button class="save-notes-btn" onclick="saveCollectionNotes('${name}')">
+                                Save Notes
+                            </button>
+                            
+                            <div>
+                                <strong style="display: block; margin-bottom: 10px; color: #374151;">
+                                    Cases (${collection.cases.length}):
+                                </strong>
+                                ${collection.cases.length === 0 ? 
+                                    '<p style="color: #6b7280;">No cases in this collection</p>' :
+                                    collection.cases.map(caseId => {
+                                        const [year, caseName] = caseId.split('::');
+                                        return `
+                                            <div class="collection-case">
+                                                <div>
+                                                    <span class="collection-case-name">${caseName}</span>
+                                                    <span class="collection-case-year">(${year})</span>
+                                                </div>
+                                                <button class="remove-case-btn" onclick="removeCaseFromCollection('${name}', '${caseId}')">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        `;
+                                    }).join('')
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            `;
         }
 
         // Toggle case
