@@ -5,6 +5,8 @@ let currentItem = null;
 let annotatedIds = new Set();
 let currentUser = null;
 let currentIndex = 0;
+let currentIframeIndex = 1; // Какой iframe сейчас активен (1 или 2)
+let nextItem = null; // Следующая статья (предзагруженная)
 
 // JSONP helper
 function jsonp(url) {
@@ -202,7 +204,10 @@ function signOut() {
     
     document.getElementById('metadata').innerHTML = '<div class="loading">Нажмите "Войти" для начала работы</div>';
     document.getElementById('annotationForm').style.display = 'none';
-    document.getElementById('articleFrame').src = 'about:blank';
+    document.getElementById('articleFrame1').src = 'about:blank';
+    document.getElementById('articleFrame2').src = 'about:blank';
+    currentIframeIndex = 1;
+    nextItem = null;
     
     // Очищаем форму
     document.getElementById('username').value = '';
@@ -351,19 +356,25 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation) {
 }
 
 // Получить следующий элемент
-function getNextItem() {
-    for (let i = currentIndex; i < articlesData.length; i++) {
+function getNextItem(preview = false) {
+    const startIndex = preview ? currentIndex + 1 : currentIndex;
+    
+    for (let i = startIndex; i < articlesData.length; i++) {
         const item = articlesData[i];
         if (!annotatedIds.has(item.id)) {
-            currentIndex = i;
+            if (!preview) {
+                currentIndex = i;
+            }
             return item;
         }
     }
     
-    for (let i = 0; i < currentIndex; i++) {
+    for (let i = 0; i < startIndex; i++) {
         const item = articlesData[i];
         if (!annotatedIds.has(item.id)) {
-            currentIndex = i;
+            if (!preview) {
+                currentIndex = i;
+            }
             return item;
         }
     }
@@ -372,10 +383,9 @@ function getNextItem() {
 }
 
 // Отобразить элемент
-function displayItem(item) {
+function displayItem(item, skipPreload = false) {
     const metadata = document.getElementById('metadata');
     const form = document.getElementById('annotationForm');
-    const frame = document.getElementById('articleFrame');
     
     const itemIndex = articlesData.findIndex(a => a.id === item.id);
     
@@ -415,7 +425,44 @@ function displayItem(item) {
     document.getElementById('wordMention').checked = false;
     document.getElementById('authorAffiliation').checked = false;
     
-    frame.src = item.url;
+    // Переключаем активный iframe
+    const currentFrame = document.getElementById(`articleFrame${currentIframeIndex}`);
+    const nextFrameIndex = currentIframeIndex === 1 ? 2 : 1;
+    const nextFrame = document.getElementById(`articleFrame${nextFrameIndex}`);
+    
+    // Если nextItem уже загружен в nextFrame - просто переключаемся
+    if (nextItem && nextItem.id === item.id) {
+        // Мгновенное переключение!
+        currentFrame.classList.remove('active');
+        nextFrame.classList.add('active');
+        currentIframeIndex = nextFrameIndex;
+        console.log('⚡ Мгновенное переключение на предзагруженную статью!');
+    } else {
+        // Загружаем в текущий iframe (первый раз или если что-то пошло не так)
+        currentFrame.src = item.url;
+    }
+    
+    // Предзагружаем следующую статью (если не сказано пропустить)
+    if (!skipPreload) {
+        preloadNextItem();
+    }
+}
+
+// Предзагрузка следующей статьи
+function preloadNextItem() {
+    const item = getNextItem(true); // Получаем следующую БЕЗ изменения currentIndex
+    
+    if (item) {
+        nextItem = item;
+        const nextFrameIndex = currentIframeIndex === 1 ? 2 : 1;
+        const nextFrame = document.getElementById(`articleFrame${nextFrameIndex}`);
+        
+        // Грузим в фоновый iframe
+        nextFrame.src = item.url;
+        console.log('🔄 Предзагрузка следующей статьи:', item.title.substring(0, 50) + '...');
+    } else {
+        nextItem = null;
+    }
 }
 
 // Обновить статистику
