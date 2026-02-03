@@ -359,6 +359,27 @@
             border: none;
         }
         
+        .article-iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .article-iframe.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .main-content {
+            position: relative;
+        }
+        
         .loading {
             display: flex;
             align-items: center;
@@ -509,11 +530,12 @@
         </div>
         
         <div class="main-content">
-            <iframe id="articleFrame" src="about:blank"></iframe>
+            <iframe id="articleFrame1" class="article-iframe active" src="about:blank"></iframe>
+            <iframe id="articleFrame2" class="article-iframe" src="about:blank"></iframe>
         </div>
     </div>
 
     <script src="config.js"></script>
-    <script src="app.js"></script>
+    <script src="app-simple-auth.js"></script>
 </body>
 </html>
