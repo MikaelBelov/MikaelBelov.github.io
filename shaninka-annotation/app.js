@@ -312,24 +312,6 @@ async function loadUserProgress() {
         showError('Ошибка загрузки прогресса: ' + error.message);
     }
 }
-        if (!dataLoaded) return;
-        
-        const url = `${CONFIG.appsScriptUrl}?action=getUserProgress&userId=${encodeURIComponent(currentUser.username)}`;
-        const result = await jsonp(url);
-        
-        if (result.success && result.data) {
-            annotatedIds = new Set(result.data.annotated_ids || []);
-            currentIndex = result.data.last_index || 0;
-            console.log(`📂 Загружен прогресс: ${annotatedIds.size} размеченных`);
-        }
-        
-        loadNextItem();
-        
-    } catch (error) {
-        console.error('Ошибка загрузки прогресса:', error);
-        showError('Ошибка загрузки прогресса: ' + error.message);
-    }
-}
 
 // Сохранение прогресса на сервер
 async function saveUserProgress() {
