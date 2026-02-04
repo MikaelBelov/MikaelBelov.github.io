@@ -2,7 +2,6 @@
 
 let articlesData = [];
 let currentItem = null;
-let annotatedIds = new Set();
 let currentUser = null;
 let currentIndex = 0;
 let currentIframeIndex = 1; // Какой iframe сейчас активен (1 или 2)
@@ -200,7 +199,7 @@ function signOut() {
     document.getElementById('userInfo').classList.remove('active');
     
     articlesData = [];
-    annotatedIds.clear();
+    currentIndex = 0;
     
     document.getElementById('metadata').innerHTML = '<div class="loading">Нажмите "Войти" для начала работы</div>';
     document.getElementById('annotationForm').style.display = 'none';
@@ -220,17 +219,21 @@ function signOut() {
 // Проверка сохранённой сессии
 function checkStoredSession() {
     const stored = localStorage.getItem('current_user');
+    console.log('🔍 Проверка localStorage:', stored);
+    
     if (stored) {
         try {
             currentUser = JSON.parse(stored);
-            console.log('👤 Восстановлена сессия:', currentUser.name);
+            console.log('✅ Восстановлена сессия:', currentUser.name, currentUser);
             updateUIAfterLogin();
             loadUserProgress();
             return true;
         } catch (e) {
-            console.error('Ошибка восстановления сессии:', e);
+            console.error('❌ Ошибка восстановления сессии:', e);
             localStorage.removeItem('current_user');
         }
+    } else {
+        console.log('❌ Нет сохранённой сессии в localStorage');
     }
     return false;
 }
@@ -270,10 +273,45 @@ async function loadDataFromAppsScript() {
 
 // Загрузка прогресса пользователя
 async function loadUserProgress() {
-    if (!currentUser) return;
+    if (!currentUser) {
+        console.log('❌ Нет currentUser');
+        return;
+    }
+    
+    if (!currentUser.username) {
+        console.error('❌ currentUser.username отсутствует!', currentUser);
+        alert('Ошибка сессии! Пожалуйста, войдите заново.');
+        signOut();
+        return;
+    }
+    
+    console.log('📂 Загружаем прогресс для:', currentUser.username);
     
     try {
         const dataLoaded = await loadDataFromAppsScript();
+        if (!dataLoaded) return;
+        
+        const url = `${CONFIG.appsScriptUrl}?action=getUserProgress&userId=${encodeURIComponent(currentUser.username)}`;
+        console.log('🔗 Запрос прогресса:', url);
+        
+        const result = await jsonp(url);
+        console.log('📥 Ответ сервера:', result);
+        
+        if (result.success && result.data) {
+            currentIndex = result.data.last_index || 0;
+            console.log(`✅ Загружен прогресс: начинаем с индекса ${currentIndex}`);
+        } else {
+            console.log('⚠️ Нет данных прогресса, начинаем с нуля');
+            currentIndex = 0;
+        }
+        
+        loadNextItem();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки прогресса:', error);
+        showError('Ошибка загрузки прогресса: ' + error.message);
+    }
+}
         if (!dataLoaded) return;
         
         const url = `${CONFIG.appsScriptUrl}?action=getUserProgress&userId=${encodeURIComponent(currentUser.username)}`;
@@ -298,9 +336,13 @@ async function saveUserProgress() {
     if (!currentUser) return;
     
     try {
-        await fetch(CONFIG.appsScriptUrl, {
+        console.log('💾 Сохраняем прогресс:', {
+            userId: currentUser.username,
+            index: currentIndex
+        });
+        
+        const response = await fetch(CONFIG.appsScriptUrl, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -308,14 +350,14 @@ async function saveUserProgress() {
                 action: 'saveProgress',
                 userId: currentUser.username,
                 userName: currentUser.name,
-                annotated_ids: [...annotatedIds],
                 last_index: currentIndex
             })
         });
         
-        console.log('💾 Прогресс сохранён');
+        console.log('✅ Прогресс сохранён на сервер');
     } catch (error) {
-        console.error('Ошибка сохранения прогресса:', error);
+        console.error('❌ Ошибка сохранения прогресса:', error);
+        console.log('⚠️ Прогресс НЕ сохранён на сервере, только локально');
     }
 }
 
@@ -329,9 +371,14 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation) {
         const ip = await getClientIP();
         const timestamp = new Date().toISOString();
         
-        await fetch(CONFIG.appsScriptUrl, {
+        console.log('💾 Сохраняем аннотацию:', {
+            item: itemId.substring(0, 50),
+            word: wordMention,
+            affiliation: authorAffiliation
+        });
+        
+        const response = await fetch(CONFIG.appsScriptUrl, {
             method: 'POST',
-            mode: 'no-cors',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -347,36 +394,25 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation) {
             })
         });
         
+        console.log('✅ Аннотация сохранена');
         return true;
         
     } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        throw error;
+        console.error('❌ Ошибка сохранения аннотации:', error);
+        console.log('⚠️ Аннотация НЕ сохранена на сервере');
+        return true; // Не блокируем работу
     }
 }
 
-// Получить следующий элемент
+// Получить следующий элемент (просто следующий по индексу)
 function getNextItem(preview = false) {
-    const startIndex = preview ? currentIndex + 1 : currentIndex;
+    const index = preview ? currentIndex + 1 : currentIndex;
     
-    for (let i = startIndex; i < articlesData.length; i++) {
-        const item = articlesData[i];
-        if (!annotatedIds.has(item.id)) {
-            if (!preview) {
-                currentIndex = i;
-            }
-            return item;
+    if (index >= 0 && index < articlesData.length) {
+        if (!preview) {
+            currentIndex = index;
         }
-    }
-    
-    for (let i = 0; i < startIndex; i++) {
-        const item = articlesData[i];
-        if (!annotatedIds.has(item.id)) {
-            if (!preview) {
-                currentIndex = i;
-            }
-            return item;
-        }
+        return articlesData[index];
     }
     
     return null;
@@ -468,7 +504,7 @@ function preloadNextItem() {
 // Обновить статистику
 function updateStats() {
     const total = articlesData.length;
-    const annotated = annotatedIds.size;
+    const annotated = currentIndex;
     const remaining = total - annotated;
     const percent = total > 0 ? (annotated / total * 100) : 0;
     
@@ -498,14 +534,11 @@ async function handleSave() {
     const wordMention = document.getElementById('wordMention').checked;
     const authorAffiliation = document.getElementById('authorAffiliation').checked;
     
-    const saveBtn = document.getElementById('saveBtn');
-    const skipBtn = document.getElementById('skipBtn');
-    
     // Запоминаем текущую статью
     const itemToSave = currentItem;
     
-    // Добавляем в annotatedIds СРАЗУ
-    annotatedIds.add(currentItem.id);
+    // Увеличиваем индекс (переходим к следующей)
+    currentIndex++;
     
     // МГНОВЕННО переключаемся на следующую
     loadNextItem();
@@ -517,7 +550,6 @@ async function handleSave() {
         })
         .catch(error => {
             console.error('Ошибка фонового сохранения:', error);
-            // Не показываем ошибку пользователю - не прерываем работу
         });
 }
 
@@ -528,8 +560,8 @@ async function handleSkip() {
     // Запоминаем текущую статью
     const itemToSave = currentItem;
     
-    // Добавляем в annotatedIds СРАЗУ (пропущено = тоже размечено)
-    annotatedIds.add(currentItem.id);
+    // Увеличиваем индекс (пропускаем = тоже засчитывается)
+    currentIndex++;
     
     // МГНОВЕННО переключаемся на следующую
     loadNextItem();
