@@ -286,7 +286,14 @@ async function loadUserProgress() {
     }
     
     console.log('📂 Загружаем прогресс для:', currentUser.username);
-    
+
+    // Показываем индикатор загрузки
+    document.getElementById('metadata').innerHTML = `
+        <div class="loading">
+            <div>⏳ Загрузка профиля ${escapeHtml(currentUser.name)}...</div>
+        </div>
+    `;
+
     try {
         const dataLoaded = await loadDataFromAppsScript();
         if (!dataLoaded) return;
