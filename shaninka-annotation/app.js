@@ -344,7 +344,7 @@ async function saveUserProgress() {
 }
 
 // Сохранение аннотации
-async function saveAnnotation(itemId, wordMention, authorAffiliation) {
+async function saveAnnotation(itemId, wordMention, affiliatedAuthors) {
     if (!currentUser) {
         throw new Error('Необходимо войти в систему');
     }
@@ -356,7 +356,7 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation) {
         console.log('💾 Сохраняем аннотацию:', {
             item: itemId.substring(0, 50),
             word: wordMention,
-            affiliation: authorAffiliation
+            authors: affiliatedAuthors
         });
         
         const response = await fetch(CONFIG.appsScriptUrl, {
@@ -368,7 +368,7 @@ async function saveAnnotation(itemId, wordMention, authorAffiliation) {
                 action: 'saveAnnotation',
                 item_id: itemId,
                 word_mention: wordMention,
-                author_affiliation: authorAffiliation,
+                affiliated_authors: affiliatedAuthors,
                 user_id: currentUser.username,
                 user_name: currentUser.name,
                 ip: ip,
@@ -440,8 +440,38 @@ function displayItem(item, skipPreload = false) {
     
     form.style.display = 'block';
     
+    // Очищаем чекбокс упоминания
     document.getElementById('wordMention').checked = false;
-    document.getElementById('authorAffiliation').checked = false;
+    
+    // Создаём чекбоксы для авторов
+    const authorsContainer = document.getElementById('authorsCheckboxes');
+    authorsContainer.innerHTML = '';
+    
+    if (item.authors && item.authors.length > 0) {
+        item.authors.forEach((author, index) => {
+            const checkboxGroup = document.createElement('div');
+            checkboxGroup.className = 'checkbox-group';
+            
+            const label = document.createElement('label');
+            label.className = 'checkbox-label';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `author_${index}`;
+            checkbox.dataset.authorName = author;
+            
+            const span = document.createElement('span');
+            span.className = 'checkbox-text';
+            span.textContent = `${author} использует в данной статье шанинскую аффилиацию`;
+            
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            checkboxGroup.appendChild(label);
+            authorsContainer.appendChild(checkboxGroup);
+        });
+    } else {
+        authorsContainer.innerHTML = '<div style="color: #6c757d; font-size: 14px; padding: 10px;">Нет авторов</div>';
+    }
     
     // Переключаем активный iframe
     const currentFrame = document.getElementById(`articleFrame${currentIframeIndex}`);
@@ -514,7 +544,17 @@ async function handleSave() {
     if (!currentItem || !currentUser) return;
     
     const wordMention = document.getElementById('wordMention').checked;
-    const authorAffiliation = document.getElementById('authorAffiliation').checked;
+    
+    // Собираем выбранных авторов
+    const affiliatedAuthors = [];
+    if (currentItem.authors && currentItem.authors.length > 0) {
+        currentItem.authors.forEach((author, index) => {
+            const checkbox = document.getElementById(`author_${index}`);
+            if (checkbox && checkbox.checked) {
+                affiliatedAuthors.push(author);
+            }
+        });
+    }
     
     // Запоминаем текущую статью
     const itemToSave = currentItem;
@@ -526,7 +566,7 @@ async function handleSave() {
     loadNextItem();
     
     // Сохраняем В ФОНЕ (без ожидания)
-    saveAnnotation(itemToSave.id, wordMention, authorAffiliation)
+    saveAnnotation(itemToSave.id, wordMention, affiliatedAuthors)
         .then(() => {
             return saveUserProgress();
         })
@@ -548,8 +588,8 @@ async function handleSkip() {
     // МГНОВЕННО переключаемся на следующую
     loadNextItem();
     
-    // Сохраняем пропуск В ФОНЕ
-    saveAnnotation(itemToSave.id, false, false)
+    // Сохраняем пропуск В ФОНЕ (пустой массив авторов)
+    saveAnnotation(itemToSave.id, false, [])
         .then(() => {
             return saveUserProgress();
         })
