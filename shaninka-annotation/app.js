@@ -323,19 +323,15 @@ async function saveUserProgress() {
             index: currentIndex
         });
         
-        const response = await fetch(CONFIG.appsScriptUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify({
-                action: 'saveProgress',
-                userId: currentUser.username,
-                userName: currentUser.name,
-                last_index: currentIndex
-            })
+        const params = new URLSearchParams({
+            action: 'saveProgress',
+            userId: currentUser.username,
+            userName: currentUser.name,
+            last_index: currentIndex
         });
-        
+        const url = `${CONFIG.appsScriptUrl}?${params.toString()}`;
+        const response = await fetch(url, { redirect: 'follow' });
+
         console.log('✅ Прогресс сохранён на сервер');
     } catch (error) {
         console.error('❌ Ошибка сохранения прогресса:', error);
@@ -359,23 +355,19 @@ async function saveAnnotation(itemId, wordMention, affiliatedAuthors) {
             authors: affiliatedAuthors
         });
         
-        const response = await fetch(CONFIG.appsScriptUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify({
-                action: 'saveAnnotation',
-                item_id: itemId,
-                word_mention: wordMention,
-                affiliated_authors: affiliatedAuthors,
-                user_id: currentUser.username,
-                user_name: currentUser.name,
-                ip: ip,
-                timestamp: timestamp
-            })
+        const params = new URLSearchParams({
+            action: 'saveAnnotation',
+            item_id: itemId,
+            word_mention: wordMention,
+            affiliated_authors: JSON.stringify(affiliatedAuthors),
+            user_id: currentUser.username,
+            user_name: currentUser.name,
+            ip: ip,
+            timestamp: timestamp
         });
-        
+        const url = `${CONFIG.appsScriptUrl}?${params.toString()}`;
+        const response = await fetch(url, { redirect: 'follow' });
+
         console.log('✅ Аннотация сохранена');
         return true;
         
