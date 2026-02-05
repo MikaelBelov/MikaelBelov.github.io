@@ -652,10 +652,17 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Сохраняем прогресс при закрытии
+// Сохраняем прогресс при закрытии (используем sendBeacon — он работает при выгрузке страницы)
 window.addEventListener('beforeunload', () => {
     if (currentUser) {
-        saveUserProgress();
+        const params = new URLSearchParams({
+            action: 'saveProgress',
+            userId: currentUser.username,
+            userName: currentUser.name,
+            last_index: currentIndex
+        });
+        const url = `${CONFIG.appsScriptUrl}?${params.toString()}`;
+        navigator.sendBeacon(url);
     }
 });
 
