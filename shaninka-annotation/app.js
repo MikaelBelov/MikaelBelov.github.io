@@ -326,7 +326,7 @@ async function saveUserProgress() {
         const response = await fetch(CONFIG.appsScriptUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify({
                 action: 'saveProgress',
@@ -362,7 +362,7 @@ async function saveAnnotation(itemId, wordMention, affiliatedAuthors) {
         const response = await fetch(CONFIG.appsScriptUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify({
                 action: 'saveAnnotation',
