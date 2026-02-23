@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Bot</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f0f0f;
+    color: #e0e0e0;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== LOGIN SCREEN ===== */
+  .login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: #0f0f0f;
+  }
+  .login-box {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 32px;
+    width: 340px;
+  }
+  .login-box h2 {
+    font-size: 18px;
+    color: #fff;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .login-box input {
+    width: 100%;
+    background: #111;
+    border: 1px solid #333;
+    color: #e0e0e0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .login-box input:focus { outline: none; border-color: #1d4ed8; }
+  .login-box button {
+    width: 100%;
+    background: #1d4ed8;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .login-box button:hover { background: #2563eb; }
+  .login-box button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .login-error {
+    color: #f87171;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+
+  /* ===== MAIN APP ===== */
+  .app { display: none; flex-direction: column; height: 100vh; }
+  .app.visible { display: flex; }
+
+  .header {
+    padding: 10px 20px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #2a2a2a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .header h1 { font-size: 15px; font-weight: 600; color: #fff; }
+  .status {
+    font-size: 11px; padding: 3px 8px; border-radius: 10px;
+    background: #1e3a1e; color: #4ade80;
+  }
+  .status.error { background: #3a1e1e; color: #f87171; }
+  .status.loading { background: #3a3a1e; color: #facc15; }
+  .header-spacer { flex: 1; }
+  .header-user { font-size: 12px; color: #666; }
+
+  .main-area { display: flex; flex: 1; overflow: hidden; }
+
+  /* ===== GUIDE PANEL ===== */
+  .guide-panel {
+    width: 320px;
+    background: #111;
+    border-right: 1px solid #222;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .guide-header {
+    padding: 10px 14px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #222;
+  }
+  .guide-header h3 {
+    font-size: 12px; color: #888;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .guide-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+  }
+  .guide-block {
+    margin-bottom: 12px;
+    background: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .guide-block-title {
+    padding: 8px 12px;
+    background: #222;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ccc;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .guide-block-title:hover { background: #2a2a2a; }
+  .guide-block-title .arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
+  .guide-block-title.open .arrow { transform: rotate(90deg); }
+  .guide-questions {
+    display: none;
+    padding: 8px 12px;
+  }
+  .guide-questions.open { display: block; }
+  .guide-q {
+    font-size: 11px;
+    color: #999;
+    padding: 4px 0;
+    border-bottom: 1px solid #1a1a1a;
+    line-height: 1.4;
+  }
+  .guide-q:last-child { border-bottom: none; }
+  .guide-q-id { color: #555; font-family: monospace; font-size: 10px; }
+  .guide-q.active { color: #4ade80; }
+
+  /* ===== CHAT PANEL ===== */
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+  }
+  .msg.bot { align-self: flex-start; background: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; }
+  .msg.user { align-self: flex-end; background: #1d4ed8; color: #fff; border-bottom-right-radius: 4px; }
+  .msg.system { align-self: center; background: transparent; color: #666; font-size: 12px; padding: 4px; }
+  .msg.error-msg { align-self: center; background: #2a1515; color: #f87171; font-size: 12px; border: 1px solid #3a2020; }
+
+  .typing {
+    align-self: flex-start;
+    padding: 10px 14px;
+    background: #1e293b;
+    border-radius: 12px;
+    border-bottom-left-radius: 4px;
+    display: none;
+    margin: 0 20px;
+  }
+  .typing span {
+    display: inline-block; width: 6px; height: 6px;
+    background: #64748b; border-radius: 50%; margin: 0 2px;
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  .input-area {
+    padding: 12px 20px;
+    background: #141414;
+    border-top: 1px solid #222;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .input-area input {
+    flex: 1; background: #1a1a1a; border: 1px solid #333;
+    color: #e0e0e0; padding: 10px 14px; border-radius: 10px; font-size: 14px;
+  }
+  .input-area input:focus { outline: none; border-color: #1d4ed8; }
+  .input-area input:disabled { opacity: 0.4; }
+  .input-area button {
+    background: #1d4ed8; color: #fff; border: none;
+    padding: 10px 20px; border-radius: 10px; font-size: 14px; cursor: pointer;
+  }
+  .input-area button:hover { background: #2563eb; }
+  .input-area button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ===== DEBUG PANEL ===== */
+  .debug-panel {
+    width: 380px; background: #111; border-left: 1px solid #222;
+    display: none; flex-direction: column; flex-shrink: 0;
+  }
+  .debug-panel.visible { display: flex; }
+  .debug-header {
+    padding: 10px 14px; background: #1a1a1a; border-bottom: 1px solid #222;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .debug-header h3 { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .debug-close {
+    background: none; border: 1px solid #333; color: #888;
+    padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;
+  }
+  .debug-content { flex: 1; overflow-y: auto; padding: 10px; }
+  .debug-entry { margin-bottom: 10px; background: #1a1a1a; border-radius: 8px; overflow: hidden; }
+  .debug-entry-header {
+    padding: 6px 10px; background: #222; font-size: 11px; color: #888;
+    cursor: pointer; display: flex; justify-content: space-between;
+  }
+  .debug-entry-header:hover { background: #2a2a2a; }
+  .debug-entry-body {
+    padding: 8px 10px; font-size: 11px; font-family: monospace; color: #aaa;
+    white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto;
+  }
+  .debug-entry-body.collapsed { display: none; }
+  .tag { font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 6px; }
+  .tag.followup { background: #1e3a3a; color: #2dd4bf; }
+  .tag.next { background: #1e1e3a; color: #818cf8; }
+  .tag.end { background: #3a1e1e; color: #f87171; }
+  .tag.ask { background: #1e3a1e; color: #4ade80; }
+
+  .toggle-debug-btn {
+    background: #222; border: 1px solid #333; color: #888;
+    padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;
+    margin-left: 8px;
+  }
+  .toggle-debug-btn:hover { background: #333; color: #ccc; }
+
+  /* Scrollbars */
+  .messages::-webkit-scrollbar, .debug-content::-webkit-scrollbar,
+  .debug-entry-body::-webkit-scrollbar, .guide-content::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-thumb, .debug-content::-webkit-scrollbar-thumb,
+  .debug-entry-body::-webkit-scrollbar-thumb, .guide-content::-webkit-scrollbar-thumb {
+    background: #333; border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2>🎙 Interview Bot</h2>
+    <input type="text" id="loginInput" placeholder="Логин" autofocus
+           onkeydown="if(event.key==='Enter')document.getElementById('passInput').focus()" />
+    <input type="password" id="passInput" placeholder="Пароль"
+           onkeydown="if(event.key==='Enter')doLogin()" />
+    <button id="loginBtn" onclick="doLogin()">Войти</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div class="app" id="app">
+  <div class="header">
+    <h1>🎙 Interview Bot</h1>
+    <span class="status" id="status">Ready</span>
+    <div class="header-spacer"></div>
+    <span class="header-user" id="headerUser"></span>
+    <button class="toggle-debug-btn" onclick="toggleDebug()">{ } Dev</button>
+  </div>
+
+  <div class="main-area">
+    <!-- GUIDE PANEL -->
+    <div class="guide-panel" id="guidePanel">
+      <div class="guide-header"><h3>📋 Гайд интервью</h3></div>
+      <div class="guide-content" id="guideContent"></div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat-panel">
+      <div class="messages" id="messages"></div>
+      <div class="typing" id="typing"><span></span><span></span><span></span></div>
+      <div class="input-area">
+        <input type="text" id="userInput" placeholder="Ваш ответ..."
+               onkeydown="if(event.key==='Enter')sendMessage()" />
+        <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+      </div>
+    </div>
+
+    <!-- DEBUG PANEL (hidden by default) -->
+    <div class="debug-panel" id="debugPanel">
+      <div class="debug-header">
+        <h3>Debug / Analysis</h3>
+        <button class="debug-close" onclick="toggleDebug()">✕</button>
+      </div>
+      <div class="debug-content" id="debugContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== НАСТРОЙКИ ======
+const WORKER_URL = "https://rough-truth-1d0d.misha6041.workers.dev";
+const API_KEY = "";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaKkgk8eLrG9P0hXY7lgUwllw4zhumLuOnyrfriqy0bqlPzezJrE-enKbUJk0Yw3QP/exec";
+const DEV_PASSWORD = "valley";
+// ========================
+
+let state = null;
+let turnNumber = 0;
+let currentLogin = "";
+let debugUnlocked = false;
+
+// ===== INTERVIEW GUIDE DATA =====
+const GUIDE_BLOCKS = [
+  { id: "intro", title: "Вступление и контекст", questions: [
+    { id: "intro_q1", text: "Расскажите немного о себе — чем занимаетесь, какая жизненная ситуация?" },
+    { id: "intro_q2", text: "Момент, когда поняли, что нужны деньги. Что происходило?" },
+    { id: "intro_q3", text: "Почему именно кредит, а не другие варианты?" }
+  ]},
+  { id: "search_discovery", title: "Поиск и выбор банка", questions: [
+    { id: "search_q1", text: "Где начали искать информацию? Первый шаг?" },
+    { id: "search_q2", text: "Как выбирали между банками? На что смотрели?" },
+    { id: "search_q3", text: "Какие банки/продукты сразу отмели? Почему?" },
+    { id: "search_q4", text: "Момент 'точно, беру это' — что стало решающим?" },
+    { id: "search_q5", text: "Читали ли отзывы? Где и как?" }
+  ]},
+  { id: "application", title: "Подача заявки", questions: [
+    { id: "app_q1", text: "Как подавали заявку? Процесс по шагам." },
+    { id: "app_q2", text: "Моменты непонимания — что от вас хотят?" },
+    { id: "app_q3", text: "Что чувствовали при заполнении?" },
+    { id: "app_q4", text: "Сколько времени ушло? Быстрее/дольше ожиданий?" },
+    { id: "app_q5", text: "Нужно ли было загружать документы?" }
+  ]},
+  { id: "approval_waiting", title: "Ожидание одобрения", questions: [
+    { id: "wait_q1", text: "Что делали после отправки заявки?" },
+    { id: "wait_q2", text: "Как быстро пришёл ответ?" },
+    { id: "wait_q3", text: "Как сообщили о решении? SMS/звонок/письмо?" },
+    { id: "wait_q4", text: "Запрашивали дополнительные документы?" }
+  ]},
+  { id: "contract_signing", title: "Подписание договора и получение денег", questions: [
+    { id: "contract_q1", text: "Как подписывали договор?" },
+    { id: "contract_q2", text: "Читали ли договор?" },
+    { id: "contract_q3", text: "Предлагали доп. услуги/страховки?" },
+    { id: "contract_q4", text: "Как быстро поступили деньги?" },
+    { id: "contract_q5", text: "Всё прошло как ожидали? Неожиданности?" }
+  ]},
+  { id: "usage_experience", title: "Опыт использования кредита", questions: [
+    { id: "usage_q1", text: "На что потратили деньги?" },
+    { id: "usage_q2", text: "Как отслеживаете остаток?" },
+    { id: "usage_q3", text: "Как планируете погашать?" },
+    { id: "usage_q4", text: "Сложности с графиком платежей?" }
+  ]},
+  { id: "support_issues", title: "Поддержка и проблемы", questions: [
+    { id: "support_q1", text: "Были проблемы или вопросы?" },
+    { id: "support_q2", text: "Обращались в поддержку? Как?" },
+    { id: "support_q3", text: "Решилась ли проблема? Как быстро?" }
+  ]},
+  { id: "reflection", title: "Рефлексия и оценка", questions: [
+    { id: "refl_q1", text: "Довольны ли что взяли кредит?" },
+    { id: "refl_q2", text: "Что бы изменили?" },
+    { id: "refl_q3", text: "Взяли бы снова в этом банке?" },
+    { id: "refl_q4", text: "Посоветовали бы знакомым?" },
+    { id: "refl_q5", text: "Что-то важное, о чём не поговорили?" }
+  ]},
+  { id: "closing", title: "Завершение", questions: [
+    { id: "closing_q1", text: "Есть вопросы по исследованию?" },
+    { id: "closing_q2", text: "Спасибо за время и откровенность!" }
+  ]}
+];
+
+// ===== RENDER GUIDE =====
+function renderGuide() {
+  const container = document.getElementById('guideContent');
+  container.innerHTML = '';
+  GUIDE_BLOCKS.forEach((block, bi) => {
+    const div = document.createElement('div');
+    div.className = 'guide-block';
+    div.setAttribute('data-block', bi);
+
+    const title = document.createElement('div');
+    title.className = 'guide-block-title';
+    title.innerHTML = `<span>${bi + 1}. ${block.title}</span><span class="arrow">▶</span>`;
+    title.onclick = () => {
+      title.classList.toggle('open');
+      qs.classList.toggle('open');
+    };
+
+    const qs = document.createElement('div');
+    qs.className = 'guide-questions';
+    block.questions.forEach(q => {
+      const qd = document.createElement('div');
+      qd.className = 'guide-q';
+      qd.setAttribute('data-qid', q.id);
+      qd.innerHTML = `<span class="guide-q-id">${q.id}</span> ${q.text}`;
+      qs.appendChild(qd);
+    });
+
+    div.appendChild(title);
+    div.appendChild(qs);
+    container.appendChild(div);
+  });
+}
+
+function updateGuideHighlight(blockIndex, questionIndex) {
+  document.querySelectorAll('.guide-q').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.guide-block-title').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('.guide-questions').forEach(el => el.classList.remove('open'));
+
+  const block = document.querySelector(`.guide-block[data-block="${blockIndex}"]`);
+  if (!block) return;
+
+  const title = block.querySelector('.guide-block-title');
+  const qs = block.querySelector('.guide-questions');
+  if (title) title.classList.add('open');
+  if (qs) qs.classList.add('open');
+
+  const questions = GUIDE_BLOCKS[blockIndex]?.questions || [];
+  const qId = questions[questionIndex]?.id;
+  if (qId) {
+    const qEl = block.querySelector(`[data-qid="${qId}"]`);
+    if (qEl) qEl.classList.add('active');
+  }
+}
+
+// ===== AUTH =====
+async function doLogin() {
+  const login = document.getElementById('loginInput').value.trim();
+  const pass = document.getElementById('passInput').value.trim();
+  const err = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  if (!login || !pass) { err.textContent = 'Введите логин и пароль'; return; }
+
+  btn.disabled = true;
+  err.textContent = 'Проверяю...';
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'auth', login, password: pass })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      currentLogin = login;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').classList.add('visible');
+      document.getElementById('headerUser').textContent = login;
+      renderGuide();
+      sendMessage(); // auto-start
+    } else {
+      err.textContent = 'Неверный логин или пароль';
+    }
+  } catch (e) {
+    err.textContent = 'Ошибка соединения: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ===== DEBUG =====
+function toggleDebug() {
+  const panel = document.getElementById('debugPanel');
+  if (!debugUnlocked) {
+    const pwd = prompt('Пароль разработчика:');
+    if (pwd !== DEV_PASSWORD) {
+      alert('Неверный пароль');
+      return;
+    }
+    debugUnlocked = true;
+  }
+  panel.classList.toggle('visible');
+}
+
+function addDebugEntry(turn, data) {
+  const container = document.getElementById('debugContent');
+  const entry = document.createElement('div');
+  entry.className = 'debug-entry';
+
+  const action = data.llmAction || data.analysis?.decision?.action || '?';
+  const tagClass = ['followup','next','end','ask'].includes(action) ? action : 'ask';
+
+  const header = document.createElement('div');
+  header.className = 'debug-entry-header';
+  header.innerHTML = `<span>Turn ${turn}</span><span><span class="tag ${tagClass}">${action}</span></span>`;
+
+  const body = document.createElement('div');
+  body.className = 'debug-entry-body';
+
+  const analysis = data.analysis || data.state?.lastAnalysis;
+  let debugText = '';
+  if (analysis) {
+    const a = analysis.analysis || {};
+    const d = analysis.decision || {};
+    debugText += `📊 ANALYSIS\n`;
+    debugText += `  type: ${a.answer_type || '?'}  depth: ${a.depth_score || '?'}/5\n`;
+    debugText += `  covered: ${a.what_covered || '-'}\n`;
+    debugText += `  missing: ${a.what_missing || '-'}\n`;
+    debugText += `  cjm_gaps: ${a.cjm_gaps || '-'}\n`;
+    debugText += `  emotions: ${a.emotional_signals || '-'}\n\n`;
+    debugText += `🎯 DECISION\n`;
+    debugText += `  action: ${d.action || '?'}\n`;
+    debugText += `  reason: ${d.reasoning || '-'}\n`;
+    debugText += `  probe: ${d.probe_target || '-'}\n\n`;
+  }
+  debugText += `📍 STATE\n`;
+  debugText += `  block: ${data.state?.currentBlockIndex ?? '?'} q: ${data.state?.currentQuestionIndex ?? '?'}\n`;
+  debugText += `  mode: ${data.state?.mode || '?'}\n`;
+  debugText += `  pending: ${data.state?.pendingQuestionId || '-'}`;
+
+  body.textContent = debugText;
+  header.addEventListener('click', () => body.classList.toggle('collapsed'));
+  entry.appendChild(header);
+  entry.appendChild(body);
+  container.insertBefore(entry, container.firstChild);
+}
+
+// ===== LOGGING =====
+async function logToSheets(userMsg, data) {
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('СЮДА')) return;
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'log',
+        session_id: data.state?.sessionId || '',
+        login: currentLogin,
+        turn: turnNumber,
+        user_message: userMsg,
+        bot_reply: data.reply || data.llmReply || '',
+        llm_action: data.llmAction || data.state?.lastAssistant?.action || '',
+        analysis: data.analysis || data.state?.lastAnalysis || null,
+        block_index: data.state?.currentBlockIndex ?? 0,
+        question_index: data.state?.currentQuestionIndex ?? 0,
+        pending_question: data.state?.pendingQuestionId || '',
+        full_state: data.state || {}
+      })
+    });
+  } catch (e) {
+    console.warn('Log error:', e);
+  }
+}
+
+// ===== CHAT =====
+function setStatus(text, type = '') {
+  const el = document.getElementById('status');
+  el.textContent = text;
+  el.className = 'status' + (type ? ' ' + type : '');
+}
+
+function addMessage(text, type = 'bot') {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const btn = document.getElementById('sendBtn');
+  const typing = document.getElementById('typing');
+
+  const text = input.value.trim();
+  if (text) addMessage(text, 'user');
+
+  input.value = '';
+  input.disabled = true;
+  btn.disabled = true;
+  typing.style.display = 'block';
+  setStatus('Thinking...', 'loading');
+
+  const payload = {
+    user_message: text,
+    session_id: 'sess_' + currentLogin + '_' + Date.now().toString(36)
+  };
+  if (state) payload.state = state;
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (API_KEY) headers['X-API-Key'] = API_KEY;
+
+  try {
+    const startTime = Date.now();
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+
+    const data = await response.json();
+    state = data.state || null;
+    turnNumber++;
+
+    const reply = data.reply || data.llmReply || '(пустой ответ)';
+    addMessage(reply, 'bot');
+    addDebugEntry(turnNumber, data);
+    setStatus(`${elapsed}s · Turn ${turnNumber}`);
+
+    // Update guide highlight
+    if (data.state) {
+      updateGuideHighlight(data.state.currentBlockIndex || 0, data.state.currentQuestionIndex || 0);
+    }
+
+    // Log to Google Sheets
+    logToSheets(text, data);
+
+    if (data.state?.ended || data.state?.mode === 'end') {
+      setStatus('Interview ended', 'error');
+      addMessage('— Интервью завершено —', 'system');
+    }
+  } catch (err) {
+    addMessage(`Ошибка: ${err.message}`, 'error-msg');
+    setStatus('Error', 'error');
+  } finally {
+    typing.style.display = 'none';
+    input.disabled = false;
+    btn.disabled = false;
+    input.focus();
+  }
+}
+</script>
+
+</body>
+</html>
