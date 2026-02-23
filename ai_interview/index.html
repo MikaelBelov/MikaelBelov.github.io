@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Interview Bot</title>
+<title>CJM Экспресс-кредиты — Interview Bot</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -14,72 +14,44 @@
     overflow: hidden;
   }
 
-  /* ===== LOGIN SCREEN ===== */
+  /* ===== LOGIN ===== */
   .login-screen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    background: #0f0f0f;
+    display: flex; align-items: center; justify-content: center;
+    height: 100vh; background: #0f0f0f;
   }
   .login-box {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 12px;
-    padding: 32px;
-    width: 340px;
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    border-radius: 12px; padding: 32px; width: 360px;
   }
-  .login-box h2 {
-    font-size: 18px;
-    color: #fff;
-    margin-bottom: 20px;
-    text-align: center;
-  }
+  .login-box h2 { font-size: 18px; color: #fff; margin-bottom: 4px; text-align: center; }
+  .login-box .subtitle { font-size: 12px; color: #666; text-align: center; margin-bottom: 20px; }
   .login-box input {
-    width: 100%;
-    background: #111;
-    border: 1px solid #333;
-    color: #e0e0e0;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 14px;
-    margin-bottom: 12px;
+    width: 100%; background: #111; border: 1px solid #333;
+    color: #e0e0e0; padding: 10px 14px; border-radius: 8px;
+    font-size: 14px; margin-bottom: 12px;
   }
   .login-box input:focus { outline: none; border-color: #1d4ed8; }
   .login-box button {
-    width: 100%;
-    background: #1d4ed8;
-    color: #fff;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
+    width: 100%; background: #1d4ed8; color: #fff; border: none;
+    padding: 10px; border-radius: 8px; font-size: 14px; cursor: pointer;
   }
   .login-box button:hover { background: #2563eb; }
   .login-box button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .login-error {
-    color: #f87171;
-    font-size: 12px;
-    text-align: center;
-    margin-top: 8px;
-    min-height: 18px;
-  }
+  .login-error { color: #f87171; font-size: 12px; text-align: center; margin-top: 8px; min-height: 18px; }
 
-  /* ===== MAIN APP ===== */
+  /* ===== APP ===== */
   .app { display: none; flex-direction: column; height: 100vh; }
   .app.visible { display: flex; }
 
   .header {
-    padding: 10px 20px;
-    background: #1a1a1a;
-    border-bottom: 1px solid #2a2a2a;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
+    padding: 10px 20px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a;
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
   }
   .header h1 { font-size: 15px; font-weight: 600; color: #fff; }
+  .header .badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 4px;
+    background: #1e3a3a; color: #2dd4bf; text-transform: uppercase; letter-spacing: 0.5px;
+  }
   .status {
     font-size: 11px; padding: 3px 8px; border-radius: 10px;
     background: #1e3a1e; color: #4ade80;
@@ -88,91 +60,70 @@
   .status.loading { background: #3a3a1e; color: #facc15; }
   .header-spacer { flex: 1; }
   .header-user { font-size: 12px; color: #666; }
+  .toggle-debug-btn {
+    background: #222; border: 1px solid #333; color: #888;
+    padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; margin-left: 8px;
+  }
+  .toggle-debug-btn:hover { background: #333; color: #ccc; }
 
   .main-area { display: flex; flex: 1; overflow: hidden; }
 
-  /* ===== GUIDE PANEL ===== */
+  /* ===== GUIDE ===== */
   .guide-panel {
-    width: 320px;
-    background: #111;
-    border-right: 1px solid #222;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    overflow: hidden;
+    width: 380px; background: #111; border-right: 1px solid #222;
+    display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
   }
   .guide-header {
-    padding: 10px 14px;
-    background: #1a1a1a;
-    border-bottom: 1px solid #222;
+    padding: 10px 14px; background: #1a1a1a; border-bottom: 1px solid #222;
   }
-  .guide-header h3 {
-    font-size: 12px; color: #888;
-    text-transform: uppercase; letter-spacing: 1px;
-  }
-  .guide-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-  }
-  .guide-block {
-    margin-bottom: 12px;
-    background: #1a1a1a;
-    border-radius: 8px;
-    overflow: hidden;
-  }
+  .guide-header h3 { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .guide-content { flex: 1; overflow-y: auto; padding: 10px; }
+
+  .guide-block { margin-bottom: 8px; background: #1a1a1a; border-radius: 8px; overflow: hidden; }
   .guide-block-title {
-    padding: 8px 12px;
-    background: #222;
-    font-size: 12px;
-    font-weight: 600;
-    color: #ccc;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 8px 12px; background: #222; font-size: 12px; font-weight: 600; color: #ccc;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
   }
   .guide-block-title:hover { background: #2a2a2a; }
   .guide-block-title .arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
   .guide-block-title.open .arrow { transform: rotate(90deg); }
-  .guide-questions {
-    display: none;
-    padding: 8px 12px;
+  .guide-block-desc {
+    display: none; padding: 4px 12px 6px; font-size: 10px; color: #555; font-style: italic;
   }
+  .guide-block-desc.open { display: block; }
+  .guide-questions { display: none; padding: 0 10px 8px; }
   .guide-questions.open { display: block; }
-  .guide-q {
-    font-size: 11px;
-    color: #999;
-    padding: 4px 0;
-    border-bottom: 1px solid #1a1a1a;
-    line-height: 1.4;
-  }
-  .guide-q:last-child { border-bottom: none; }
-  .guide-q-id { color: #555; font-family: monospace; font-size: 10px; }
-  .guide-q.active { color: #4ade80; }
 
-  /* ===== CHAT PANEL ===== */
-  .chat-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
+  .guide-q {
+    padding: 8px; margin-bottom: 6px; border-radius: 6px;
+    background: #151515; border: 1px solid #222;
+    transition: border-color 0.2s;
   }
+  .guide-q.active { border-color: #4ade80; background: #111a14; }
+  .guide-q-id {
+    font-family: monospace; font-size: 10px; color: #555;
+    display: inline-block; margin-bottom: 3px;
+  }
+  .guide-q-text { font-size: 11px; color: #bbb; line-height: 1.4; margin-bottom: 4px; }
+  .guide-q-meta { font-size: 10px; line-height: 1.3; }
+  .guide-q-hint { color: #6b8aab; margin-bottom: 2px; }
+  .guide-q-style { color: #8b7a6b; }
+  .guide-q-label {
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.3px; display: inline-block; margin-right: 4px;
+  }
+  .guide-q-label.hint-label { color: #4a6a8a; }
+  .guide-q-label.style-label { color: #7a6a5a; }
+
+  /* ===== CHAT ===== */
+  .chat-panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
   }
   .msg {
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 14px;
-    line-height: 1.5;
-    word-wrap: break-word;
+    max-width: 80%; padding: 10px 14px; border-radius: 12px;
+    font-size: 14px; line-height: 1.5; word-wrap: break-word;
   }
   .msg.bot { align-self: flex-start; background: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; }
   .msg.user { align-self: flex-end; background: #1d4ed8; color: #fff; border-bottom-right-radius: 4px; }
@@ -180,30 +131,20 @@
   .msg.error-msg { align-self: center; background: #2a1515; color: #f87171; font-size: 12px; border: 1px solid #3a2020; }
 
   .typing {
-    align-self: flex-start;
-    padding: 10px 14px;
-    background: #1e293b;
-    border-radius: 12px;
-    border-bottom-left-radius: 4px;
-    display: none;
-    margin: 0 20px;
+    align-self: flex-start; padding: 10px 14px; background: #1e293b;
+    border-radius: 12px; border-bottom-left-radius: 4px; display: none; margin: 0 20px;
   }
   .typing span {
     display: inline-block; width: 6px; height: 6px;
-    background: #64748b; border-radius: 50%; margin: 0 2px;
-    animation: bounce 1.2s infinite;
+    background: #64748b; border-radius: 50%; margin: 0 2px; animation: bounce 1.2s infinite;
   }
   .typing span:nth-child(2) { animation-delay: 0.2s; }
   .typing span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
 
   .input-area {
-    padding: 12px 20px;
-    background: #141414;
-    border-top: 1px solid #222;
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
+    padding: 12px 20px; background: #141414; border-top: 1px solid #222;
+    display: flex; gap: 8px; flex-shrink: 0;
   }
   .input-area input {
     flex: 1; background: #1a1a1a; border: 1px solid #333;
@@ -218,7 +159,7 @@
   .input-area button:hover { background: #2563eb; }
   .input-area button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* ===== DEBUG PANEL ===== */
+  /* ===== DEBUG ===== */
   .debug-panel {
     width: 380px; background: #111; border-left: 1px solid #222;
     display: none; flex-direction: column; flex-shrink: 0;
@@ -251,13 +192,6 @@
   .tag.end { background: #3a1e1e; color: #f87171; }
   .tag.ask { background: #1e3a1e; color: #4ade80; }
 
-  .toggle-debug-btn {
-    background: #222; border: 1px solid #333; color: #888;
-    padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;
-    margin-left: 8px;
-  }
-  .toggle-debug-btn:hover { background: #333; color: #ccc; }
-
   /* Scrollbars */
   .messages::-webkit-scrollbar, .debug-content::-webkit-scrollbar,
   .debug-entry-body::-webkit-scrollbar, .guide-content::-webkit-scrollbar { width: 4px; }
@@ -269,10 +203,11 @@
 </head>
 <body>
 
-<!-- ===== LOGIN SCREEN ===== -->
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <h2>🎙 Interview Bot</h2>
+    <h2>🎙 CJM Экспресс-кредиты</h2>
+    <div class="subtitle">AI Interview Bot — Customer Journey Map</div>
     <input type="text" id="loginInput" placeholder="Логин" autofocus
            onkeydown="if(event.key==='Enter')document.getElementById('passInput').focus()" />
     <input type="password" id="passInput" placeholder="Пароль"
@@ -282,10 +217,11 @@
   </div>
 </div>
 
-<!-- ===== MAIN APP ===== -->
+<!-- APP -->
 <div class="app" id="app">
   <div class="header">
-    <h1>🎙 Interview Bot</h1>
+    <h1>🎙 CJM Экспресс-кредиты</h1>
+    <span class="badge">Customer Journey Map</span>
     <span class="status" id="status">Ready</span>
     <div class="header-spacer"></div>
     <span class="header-user" id="headerUser"></span>
@@ -293,8 +229,8 @@
   </div>
 
   <div class="main-area">
-    <!-- GUIDE PANEL -->
-    <div class="guide-panel" id="guidePanel">
+    <!-- GUIDE -->
+    <div class="guide-panel">
       <div class="guide-header"><h3>📋 Гайд интервью</h3></div>
       <div class="guide-content" id="guideContent"></div>
     </div>
@@ -310,7 +246,7 @@
       </div>
     </div>
 
-    <!-- DEBUG PANEL (hidden by default) -->
+    <!-- DEBUG -->
     <div class="debug-panel" id="debugPanel">
       <div class="debug-header">
         <h3>Debug / Analysis</h3>
@@ -334,62 +270,287 @@ let turnNumber = 0;
 let currentLogin = "";
 let debugUnlocked = false;
 
-// ===== INTERVIEW GUIDE DATA =====
+// ===== FULL GUIDE =====
 const GUIDE_BLOCKS = [
-  { id: "intro", title: "Вступление и контекст", questions: [
-    { id: "intro_q1", text: "Расскажите немного о себе — чем занимаетесь, какая жизненная ситуация?" },
-    { id: "intro_q2", text: "Момент, когда поняли, что нужны деньги. Что происходило?" },
-    { id: "intro_q3", text: "Почему именно кредит, а не другие варианты?" }
-  ]},
-  { id: "search_discovery", title: "Поиск и выбор банка", questions: [
-    { id: "search_q1", text: "Где начали искать информацию? Первый шаг?" },
-    { id: "search_q2", text: "Как выбирали между банками? На что смотрели?" },
-    { id: "search_q3", text: "Какие банки/продукты сразу отмели? Почему?" },
-    { id: "search_q4", text: "Момент 'точно, беру это' — что стало решающим?" },
-    { id: "search_q5", text: "Читали ли отзывы? Где и как?" }
-  ]},
-  { id: "application", title: "Подача заявки", questions: [
-    { id: "app_q1", text: "Как подавали заявку? Процесс по шагам." },
-    { id: "app_q2", text: "Моменты непонимания — что от вас хотят?" },
-    { id: "app_q3", text: "Что чувствовали при заполнении?" },
-    { id: "app_q4", text: "Сколько времени ушло? Быстрее/дольше ожиданий?" },
-    { id: "app_q5", text: "Нужно ли было загружать документы?" }
-  ]},
-  { id: "approval_waiting", title: "Ожидание одобрения", questions: [
-    { id: "wait_q1", text: "Что делали после отправки заявки?" },
-    { id: "wait_q2", text: "Как быстро пришёл ответ?" },
-    { id: "wait_q3", text: "Как сообщили о решении? SMS/звонок/письмо?" },
-    { id: "wait_q4", text: "Запрашивали дополнительные документы?" }
-  ]},
-  { id: "contract_signing", title: "Подписание договора и получение денег", questions: [
-    { id: "contract_q1", text: "Как подписывали договор?" },
-    { id: "contract_q2", text: "Читали ли договор?" },
-    { id: "contract_q3", text: "Предлагали доп. услуги/страховки?" },
-    { id: "contract_q4", text: "Как быстро поступили деньги?" },
-    { id: "contract_q5", text: "Всё прошло как ожидали? Неожиданности?" }
-  ]},
-  { id: "usage_experience", title: "Опыт использования кредита", questions: [
-    { id: "usage_q1", text: "На что потратили деньги?" },
-    { id: "usage_q2", text: "Как отслеживаете остаток?" },
-    { id: "usage_q3", text: "Как планируете погашать?" },
-    { id: "usage_q4", text: "Сложности с графиком платежей?" }
-  ]},
-  { id: "support_issues", title: "Поддержка и проблемы", questions: [
-    { id: "support_q1", text: "Были проблемы или вопросы?" },
-    { id: "support_q2", text: "Обращались в поддержку? Как?" },
-    { id: "support_q3", text: "Решилась ли проблема? Как быстро?" }
-  ]},
-  { id: "reflection", title: "Рефлексия и оценка", questions: [
-    { id: "refl_q1", text: "Довольны ли что взяли кредит?" },
-    { id: "refl_q2", text: "Что бы изменили?" },
-    { id: "refl_q3", text: "Взяли бы снова в этом банке?" },
-    { id: "refl_q4", text: "Посоветовали бы знакомым?" },
-    { id: "refl_q5", text: "Что-то важное, о чём не поговорили?" }
-  ]},
-  { id: "closing", title: "Завершение", questions: [
-    { id: "closing_q1", text: "Есть вопросы по исследованию?" },
-    { id: "closing_q2", text: "Спасибо за время и откровенность!" }
-  ]}
+  {
+    id: "intro",
+    title: "Вступление и контекст",
+    description: "Знакомство, разогрев, общий контекст респондента",
+    questions: [
+      {
+        id: "intro_q1",
+        text: "Расскажите, пожалуйста, немного о себе — чем занимаетесь, какая у вас жизненная ситуация сейчас?",
+        followup_hint: "Если ответ слишком общий, попроси конкретный пример из недавнего времени.",
+        ask_style: "Разогрев/знакомство. НЕ ДАВИ на детали и не уводи к кредиту. Если респондент назвал профессию и жизненную ситуацию — этого достаточно, переходи дальше. Followup ТОЛЬКО если ответ совсем пустой (1-2 слова без контекста). Не уточняй детали профессии."
+      },
+      {
+        id: "intro_q2",
+        text: "Вспомните, пожалуйста, момент, когда вы поняли, что вам нужны деньги. Что происходило тогда?",
+        followup_hint: "Спроси про эмоции, мысли в тот момент. Что было первым импульсом?",
+        ask_style: "Нужен конкретный момент/эпизод. Зафиксируй контекст (когда/что случилось) и мягко добейся деталей. Уточняй эмоции/мысли и первый импульс. Не уходи в общие рассуждения."
+      },
+      {
+        id: "intro_q3",
+        text: "Почему вы решили взять именно кредит, а не, например, попросить у друзей или отложить покупку?",
+        followup_hint: "Если звучит 'не было выбора', попроси описать, какие варианты вообще рассматривались.",
+        ask_style: "Фокус на принятии решения. Выясни альтернативы и логику выбора. Если 'не было выбора' — добейся списка реально рассмотренных вариантов и причины отказа от них."
+      }
+    ]
+  },
+  {
+    id: "search_discovery",
+    title: "Поиск и выбор банка",
+    description: "Как человек искал информацию, сравнивал варианты, принимал решение",
+    questions: [
+      {
+        id: "search_q1",
+        text: "Где вы начали искать информацию о кредитах? Что было первым шагом?",
+        followup_hint: "Спроси, что конкретно вводили в поиске, какие сайты открыли первыми.",
+        ask_style: "Начало CJM-цепочки. Восстанови хронологию: первый шаг -> что дальше. Проси конкретику (запросы, сайты, приложения, звонки). Не переходи к оценке условий, пока не выяснишь шаги."
+      },
+      {
+        id: "search_q2",
+        text: "Как вы выбирали между разными банками и предложениями? На что смотрели в первую очередь?",
+        followup_hint: "Если называют процент/сумму, спроси, как сравнивали условия — в табличке, на глаз, через агрегатор?",
+        ask_style: "Фокус на критериях выбора и способе сравнения. Проси конкретные критерии (ставка, срок, скорость, требования) и механизмы сравнения (агрегатор/таблица/консультация)."
+      },
+      {
+        id: "search_q3",
+        text: "Были ли какие-то банки или продукты, которые вы сразу отмели? Почему?",
+        followup_hint: "Попроси вспомнить конкретное название или ситуацию, когда подумали 'это не подходит'.",
+        ask_style: "Фокус на отсеивании. Добейся конкретных названий/примеров и причины отказа. Привяжи к моменту выбора (что увидели/услышали -> почему отмели)."
+      },
+      {
+        id: "search_q4",
+        text: "Как вы поняли, что именно этот банк/кредит — то, что нужно? Был ли момент 'точно, беру это'?",
+        followup_hint: "Спроси, что стало решающим фактором — реклама, отзыв, условия, срочность?",
+        ask_style: "Фокус на точке решения. Выясни триггер: что именно стало решающим и в какой момент. Проси 1–2 конкретных фактора и почему они перевесили остальные."
+      },
+      {
+        id: "search_q5",
+        text: "Читали ли вы отзывы о банке или кредитном продукте? Где и как искали?",
+        followup_hint: "Если читали, спроси, какой отзыв запомнился и повлиял ли он на решение.",
+        ask_style: "Фокус на влиянии социального доказательства. Выясни источники (сайты, карты, форумы) и конкретный отзыв/тезис, который повлиял или не повлиял."
+      }
+    ]
+  },
+  {
+    id: "application",
+    title: "Процесс подачи заявки",
+    description: "Как заполняли, что чувствовали, какие сложности возникали",
+    questions: [
+      {
+        id: "app_q1",
+        text: "Расскажите, как вы подавали заявку — онлайн, в офисе, через приложение? Опишите процесс по шагам.",
+        followup_hint: "Попроси описать экран/форму/окно, которое видели. Что было понятно, что — нет?",
+        ask_style: "Пошаговая реконструкция процесса. Держи хронологию и конкретику интерфейса/действий. Уточняй: что сделали, что увидели, где сомневались."
+      },
+      {
+        id: "app_q2",
+        text: "Были ли моменты, когда вы не понимали, что от вас хотят или зачем нужна какая-то информация?",
+        followup_hint: "Спроси, как выходили из ситуации — гуглили, звонили в банк, просто пропускали?",
+        ask_style: "Фокус на непонимании/когнитивной нагрузке. Проси конкретный пример поля/шага и что сделали, чтобы разобраться. Не уходи в общие жалобы без примера."
+      },
+      {
+        id: "app_q3",
+        text: "Что вы чувствовали, пока заполняли заявку? О чём думали?",
+        followup_hint: "Если звучит 'нормально', спроси про конкретный момент — например, когда указывали доход или паспортные данные.",
+        ask_style: "Эмоции в процессе оформления. Привяжи эмоции к конкретному моменту/шагу. Уточняй, что именно вызвало тревогу/спокойствие и почему."
+      },
+      {
+        id: "app_q4",
+        text: "Сколько времени ушло на заполнение? Это было быстрее или дольше, чем вы ожидали?",
+        followup_hint: "Спроси, что замедляло — технические проблемы, непонятные поля, поиск документов?",
+        ask_style: "Фокус на времени и тормозах. Добейся оценки длительности и 1–2 причин задержек. Привяжи к конкретным шагам."
+      },
+      {
+        id: "app_q5",
+        text: "Нужно ли было загружать какие-то документы? Как это происходило?",
+        followup_hint: "Если были сложности (фото нечёткое, формат не тот), попроси описать, как решали.",
+        ask_style: "Фокус на документах/загрузке. Проси перечисление документов и конкретику процесса (как фотографировали/загружали). Уточняй проблемы и как их решали."
+      }
+    ]
+  },
+  {
+    id: "approval_waiting",
+    title: "Ожидание одобрения",
+    description: "Что происходило между подачей заявки и получением ответа",
+    questions: [
+      {
+        id: "wait_q1",
+        text: "Что вы делали после того, как отправили заявку? Ждали ответа или занимались своими делами?",
+        followup_hint: "Спроси, часто ли проверяли почту/телефон, были ли тревожные мысли.",
+        ask_style: "Фокус на периоде ожидания. Уточняй поведение (как часто проверяли, какие каналы) и эмоциональное состояние (тревога/уверенность) с примером."
+      },
+      {
+        id: "wait_q2",
+        text: "Как быстро пришёл ответ? Это совпало с вашими ожиданиями?",
+        followup_hint: "Если ждали дольше — что делали, звонили в банк? Если быстрее — удивились?",
+        ask_style: "Фокус на скорости и ожиданиях. Добейся конкретного срока (минуты/часы/дни) и реакции. Уточняй действия при задержке/быстром ответе."
+      },
+      {
+        id: "wait_q3",
+        text: "Как вам сообщили о решении — SMS, звонок, письмо? Опишите, пожалуйста, этот момент.",
+        followup_hint: "Попроси вспомнить, что именно было написано/сказано, какие эмоции вызвало.",
+        ask_style: "Фокус на канале и контенте коммуникации. Проси воспроизвести формулировку сообщения и эмоции. Держись конкретного момента получения."
+      },
+      {
+        id: "wait_q4",
+        text: "Если заявку одобрили не сразу или запросили дополнительные документы — как это было? Что потребовалось?",
+        followup_hint: "Спроси, было ли понятно, зачем нужны допы, легко ли было их предоставить.",
+        ask_style: "Фокус на доп. запросах. Проси перечисление допов и почему это было/не было понятно. Уточняй усилие и скорость предоставления."
+      }
+    ]
+  },
+  {
+    id: "contract_signing",
+    title: "Подписание договора и получение денег",
+    description: "Финальные шаги: оформление, верификация, перевод средств",
+    questions: [
+      {
+        id: "contract_q1",
+        text: "Как вы подписывали договор — электронно, в офисе, через курьера?",
+        followup_hint: "Попроси описать процесс. Если онлайн — как выглядел интерфейс, если офис — как встретили?",
+        ask_style: "Фокус на механике подписания. Проси пошагово, с деталями интерфейса/офиса/курьера. Уточняй, что было удобно/неудобно."
+      },
+      {
+        id: "contract_q2",
+        text: "Читали ли вы договор перед подписанием? Если да, что именно смотрели?",
+        followup_hint: "Если не читали — почему? Если читали — что-то насторожило или удивило?",
+        ask_style: "Фокус на осознанности/рисках. Добейся ответа читали/нет и причины. Если читали — что именно (ставка, комиссии, штрафы, страховки) и что удивило."
+      },
+      {
+        id: "contract_q3",
+        text: "Были ли какие-то дополнительные услуги или страховки, которые вам предложили? Как отреагировали?",
+        followup_hint: "Спроси, было ли понятно, обязательно это или нет. Согласились? Почему да/нет?",
+        ask_style: "Фокус на доп. продуктах и навязывании. Выясни, что предложили и как объяснили обязательность. Уточняй решение и мотивацию."
+      },
+      {
+        id: "contract_q4",
+        text: "Как быстро деньги поступили на счёт после подписания договора?",
+        followup_hint: "Спроси, что чувствовали, когда увидели деньги на счету. Сразу потратили или подождали?",
+        ask_style: "Фокус на моменте получения денег. Добейся конкретного времени и эмоций. Уточняй первые действия после поступления."
+      },
+      {
+        id: "contract_q5",
+        text: "Всё ли прошло так, как вы ожидали на этом этапе? Были неожиданности?",
+        followup_hint: "Если что-то удивило (комиссии, сроки, суммы), попроси описать подробнее.",
+        ask_style: "Фокус на разрыве ожиданий. Проси конкретную неожиданность и её последствия. Не уходи в общие оценки без примера."
+      }
+    ]
+  },
+  {
+    id: "usage_experience",
+    title: "Опыт использования кредита",
+    description: "Что происходило после получения денег, как человек распоряжался средствами",
+    questions: [
+      {
+        id: "usage_q1",
+        text: "На что вы потратили деньги? Совпало ли это с первоначальными планами?",
+        followup_hint: "Если потратили на другое — что изменилось и почему?",
+        ask_style: "Фокус на использовании средств. Проси конкретику: на что именно, почему так. Уточняй отклонение от планов и причины."
+      },
+      {
+        id: "usage_q2",
+        text: "Как вы отслеживаете, сколько осталось платить? Пользуетесь приложением банка, смотрите SMS, считаете сами?",
+        followup_hint: "Спроси, удобно ли это, всё ли понятно в выписках или уведомлениях.",
+        ask_style: "Фокус на мониторинге/прозрачности. Выясни инструмент и удобство. Уточняй, что непонятно в уведомлениях/выписках."
+      },
+      {
+        id: "usage_q3",
+        text: "Как вы планируете погашать кредит? Уже начали платить?",
+        followup_hint: "Попроси описать процесс платежа — автоплатёж, вручную, через какое приложение?",
+        ask_style: "Фокус на способе погашения. Добейся описания процесса оплаты и причин выбора способа. Уточняй, как контролируют своевременность."
+      },
+      {
+        id: "usage_q4",
+        text: "Были ли сложности с пониманием графика платежей или размера ежемесячного взноса?",
+        followup_hint: "Если были — как разбирались? Звонили в банк, искали в интернете?",
+        ask_style: "Фокус на сложности/ошибках понимания. Проси конкретный пример непонимания и как решали. Уточняй, удалось ли разобраться и что помогло."
+      }
+    ]
+  },
+  {
+    id: "support_issues",
+    title: "Обращения в поддержку и решение проблем",
+    description: "Если были проблемы — как решали, куда обращались",
+    questions: [
+      {
+        id: "support_q1",
+        text: "Были ли у вас какие-то проблемы или вопросы в процессе получения или использования кредита?",
+        followup_hint: "Если были — попроси описать конкретную ситуацию: что случилось, что подумали, что сделали первым делом.",
+        ask_style: "Фокус на проблемах/болевых точках. Требуй конкретный кейс (что случилось -> первая реакция -> действие). Уточняй исход (решилось/нет и почему)."
+      },
+      {
+        id: "support_q2",
+        text: "Обращались ли вы в службу поддержки банка? Как это было — звонили, писали в чат, приходили в офис?",
+        followup_hint: "Спроси про скорость ответа, полезность информации, тон общения.",
+        ask_style: "Фокус на канале поддержки и качестве сервиса. Выясни канал, время ответа, результативность и тон. Проси конкретный пример взаимодействия."
+      },
+      {
+        id: "support_q3",
+        text: "Решилась ли проблема? Как быстро? Остались ли вы довольны результатом?",
+        followup_hint: "Если не решилась — что вы в итоге сделали? Если решилась — что помогло?",
+        ask_style: "Фокус на исходе и удовлетворенности. Добейся срока решения и что именно помогло/не помогло. Уточняй, какие обходные решения использовали."
+      }
+    ]
+  },
+  {
+    id: "reflection",
+    title: "Рефлексия и общая оценка",
+    description: "Взгляд назад, что думает сейчас, взял бы ещё раз, что изменил бы",
+    questions: [
+      {
+        id: "refl_q1",
+        text: "Если оглянуться назад — довольны ли вы тем, что взяли этот кредит? Почему да или почему нет?",
+        followup_hint: "Попроси привести конкретный пример того, что радует или огорчает.",
+        ask_style: "Рефлексия с опорой на факты. Проси 1–2 конкретных примера, что именно было хорошо/плохо и почему это важно."
+      },
+      {
+        id: "refl_q2",
+        text: "Что бы вы изменили в этом процессе, если бы могли вернуться назад?",
+        followup_hint: "Спроси и про свои действия, и про действия банка — что сделали бы иначе?",
+        ask_style: "Фокус на улучшениях. Проси конкретные изменения (своих действий и банка) и ожидаемый эффект. Не принимай абстрактные пожелания без примера."
+      },
+      {
+        id: "refl_q3",
+        text: "Взяли бы вы кредит в этом банке снова, если возникнет необходимость?",
+        followup_hint: "Попроси объяснить, почему — что конкретно влияет на это решение.",
+        ask_style: "Фокус на намерении повторного использования. Выясни условия/триггеры 'да' и 'нет'. Проси конкретные факторы решения."
+      },
+      {
+        id: "refl_q4",
+        text: "Посоветовали бы вы этот банк или продукт своим знакомым? В каких случаях да, в каких — нет?",
+        followup_hint: "Спроси, что именно сказали бы другу, если бы он спросил совета.",
+        ask_style: "Фокус на рекомендации. Проси сегментацию случаев (кому/когда подходит) и конкретную формулировку совета."
+      },
+      {
+        id: "refl_q5",
+        text: "Есть ли что-то, о чём мы не поговорили, но что кажется вам важным про ваш опыт с кредитом?",
+        followup_hint: "Дай время подумать. Если что-то вспомнит — попроси рассказать подробнее.",
+        ask_style: "Финальная полнота по содержанию. Дай паузу и собери недосказанное. Если вспоминает — проси конкретику и пример."
+      }
+    ]
+  },
+  {
+    id: "closing",
+    title: "Завершение",
+    description: "Благодарность, дополнительные вопросы от респондента",
+    questions: [
+      {
+        id: "closing_q1",
+        text: "Есть ли у вас вопросы ко мне по поводу этого исследования?",
+        followup_hint: "Ответь на вопросы честно и понятно.",
+        ask_style: "Завершение. Дай возможность задать вопросы. Не инициируй новые темы гайда."
+      },
+      {
+        id: "closing_q2",
+        text: "Спасибо большое за ваше время и откровенность! Если что-то вспомните позже — можете написать мне.",
+        followup_hint: "Это не вопрос, а благодарность. Завершай интервью тепло.",
+        ask_style: "Завершение интервью. Это не вопрос; произнеси благодарность и закрой разговор."
+      }
+    ]
+  }
 ];
 
 // ===== RENDER GUIDE =====
@@ -404,22 +565,36 @@ function renderGuide() {
     const title = document.createElement('div');
     title.className = 'guide-block-title';
     title.innerHTML = `<span>${bi + 1}. ${block.title}</span><span class="arrow">▶</span>`;
-    title.onclick = () => {
-      title.classList.toggle('open');
-      qs.classList.toggle('open');
-    };
+
+    const desc = document.createElement('div');
+    desc.className = 'guide-block-desc';
+    desc.textContent = block.description;
 
     const qs = document.createElement('div');
     qs.className = 'guide-questions';
+
+    title.onclick = () => {
+      title.classList.toggle('open');
+      desc.classList.toggle('open');
+      qs.classList.toggle('open');
+    };
+
     block.questions.forEach(q => {
       const qd = document.createElement('div');
       qd.className = 'guide-q';
       qd.setAttribute('data-qid', q.id);
-      qd.innerHTML = `<span class="guide-q-id">${q.id}</span> ${q.text}`;
+      qd.innerHTML = `
+        <div class="guide-q-id">${q.id}</div>
+        <div class="guide-q-text">${q.text}</div>
+        <div class="guide-q-meta">
+          <div class="guide-q-hint"><span class="guide-q-label hint-label">HINT:</span>${q.followup_hint}</div>
+          <div class="guide-q-style"><span class="guide-q-label style-label">STYLE:</span>${q.ask_style}</div>
+        </div>`;
       qs.appendChild(qd);
     });
 
     div.appendChild(title);
+    div.appendChild(desc);
     div.appendChild(qs);
     container.appendChild(div);
   });
@@ -428,21 +603,26 @@ function renderGuide() {
 function updateGuideHighlight(blockIndex, questionIndex) {
   document.querySelectorAll('.guide-q').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.guide-block-title').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('.guide-block-desc').forEach(el => el.classList.remove('open'));
   document.querySelectorAll('.guide-questions').forEach(el => el.classList.remove('open'));
 
   const block = document.querySelector(`.guide-block[data-block="${blockIndex}"]`);
   if (!block) return;
-
   const title = block.querySelector('.guide-block-title');
+  const desc = block.querySelector('.guide-block-desc');
   const qs = block.querySelector('.guide-questions');
   if (title) title.classList.add('open');
+  if (desc) desc.classList.add('open');
   if (qs) qs.classList.add('open');
 
   const questions = GUIDE_BLOCKS[blockIndex]?.questions || [];
   const qId = questions[questionIndex]?.id;
   if (qId) {
     const qEl = block.querySelector(`[data-qid="${qId}"]`);
-    if (qEl) qEl.classList.add('active');
+    if (qEl) {
+      qEl.classList.add('active');
+      qEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 }
 
@@ -452,12 +632,9 @@ async function doLogin() {
   const pass = document.getElementById('passInput').value.trim();
   const err = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
-
   if (!login || !pass) { err.textContent = 'Введите логин и пароль'; return; }
-
   btn.disabled = true;
   err.textContent = 'Проверяю...';
-
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
@@ -465,14 +642,13 @@ async function doLogin() {
       body: JSON.stringify({ action: 'auth', login, password: pass })
     });
     const data = await res.json();
-
     if (data.success) {
       currentLogin = login;
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').classList.add('visible');
       document.getElementById('headerUser').textContent = login;
       renderGuide();
-      sendMessage(); // auto-start
+      sendMessage();
     } else {
       err.textContent = 'Неверный логин или пароль';
     }
@@ -488,10 +664,7 @@ function toggleDebug() {
   const panel = document.getElementById('debugPanel');
   if (!debugUnlocked) {
     const pwd = prompt('Пароль разработчика:');
-    if (pwd !== DEV_PASSWORD) {
-      alert('Неверный пароль');
-      return;
-    }
+    if (pwd !== DEV_PASSWORD) { alert('Неверный пароль'); return; }
     debugUnlocked = true;
   }
   panel.classList.toggle('visible');
@@ -501,38 +674,33 @@ function addDebugEntry(turn, data) {
   const container = document.getElementById('debugContent');
   const entry = document.createElement('div');
   entry.className = 'debug-entry';
-
   const action = data.llmAction || data.analysis?.decision?.action || '?';
   const tagClass = ['followup','next','end','ask'].includes(action) ? action : 'ask';
-
   const header = document.createElement('div');
   header.className = 'debug-entry-header';
   header.innerHTML = `<span>Turn ${turn}</span><span><span class="tag ${tagClass}">${action}</span></span>`;
-
   const body = document.createElement('div');
   body.className = 'debug-entry-body';
-
   const analysis = data.analysis || data.state?.lastAnalysis;
   let debugText = '';
   if (analysis) {
     const a = analysis.analysis || {};
     const d = analysis.decision || {};
     debugText += `📊 ANALYSIS\n`;
-    debugText += `  type: ${a.answer_type || '?'}  depth: ${a.depth_score || '?'}/5\n`;
-    debugText += `  covered: ${a.what_covered || '-'}\n`;
-    debugText += `  missing: ${a.what_missing || '-'}\n`;
-    debugText += `  cjm_gaps: ${a.cjm_gaps || '-'}\n`;
-    debugText += `  emotions: ${a.emotional_signals || '-'}\n\n`;
+    debugText += `  type: ${a.answer_type||'?'}  depth: ${a.depth_score||'?'}/5\n`;
+    debugText += `  covered: ${a.what_covered||'-'}\n`;
+    debugText += `  missing: ${a.what_missing||'-'}\n`;
+    debugText += `  cjm_gaps: ${a.cjm_gaps||'-'}\n`;
+    debugText += `  emotions: ${a.emotional_signals||'-'}\n\n`;
     debugText += `🎯 DECISION\n`;
-    debugText += `  action: ${d.action || '?'}\n`;
-    debugText += `  reason: ${d.reasoning || '-'}\n`;
-    debugText += `  probe: ${d.probe_target || '-'}\n\n`;
+    debugText += `  action: ${d.action||'?'}\n`;
+    debugText += `  reason: ${d.reasoning||'-'}\n`;
+    debugText += `  probe: ${d.probe_target||'-'}\n\n`;
   }
   debugText += `📍 STATE\n`;
-  debugText += `  block: ${data.state?.currentBlockIndex ?? '?'} q: ${data.state?.currentQuestionIndex ?? '?'}\n`;
-  debugText += `  mode: ${data.state?.mode || '?'}\n`;
-  debugText += `  pending: ${data.state?.pendingQuestionId || '-'}`;
-
+  debugText += `  block: ${data.state?.currentBlockIndex??'?'} q: ${data.state?.currentQuestionIndex??'?'}\n`;
+  debugText += `  mode: ${data.state?.mode||'?'}\n`;
+  debugText += `  pending: ${data.state?.pendingQuestionId||'-'}`;
   body.textContent = debugText;
   header.addEventListener('click', () => body.classList.toggle('collapsed'));
   entry.appendChild(header);
@@ -562,9 +730,7 @@ async function logToSheets(userMsg, data) {
         full_state: data.state || {}
       })
     });
-  } catch (e) {
-    console.warn('Log error:', e);
-  }
+  } catch (e) { console.warn('Log error:', e); }
 }
 
 // ===== CHAT =====
@@ -573,7 +739,6 @@ function setStatus(text, type = '') {
   el.textContent = text;
   el.className = 'status' + (type ? ' ' + type : '');
 }
-
 function addMessage(text, type = 'bot') {
   const messages = document.getElementById('messages');
   const div = document.createElement('div');
@@ -587,53 +752,32 @@ async function sendMessage() {
   const input = document.getElementById('userInput');
   const btn = document.getElementById('sendBtn');
   const typing = document.getElementById('typing');
-
   const text = input.value.trim();
   if (text) addMessage(text, 'user');
-
   input.value = '';
   input.disabled = true;
   btn.disabled = true;
   typing.style.display = 'block';
   setStatus('Thinking...', 'loading');
 
-  const payload = {
-    user_message: text,
-    session_id: 'sess_' + currentLogin + '_' + Date.now().toString(36)
-  };
+  const payload = { user_message: text, session_id: 'sess_' + currentLogin + '_' + Date.now().toString(36) };
   if (state) payload.state = state;
-
   const headers = { 'Content-Type': 'application/json' };
   if (API_KEY) headers['X-API-Key'] = API_KEY;
 
   try {
     const startTime = Date.now();
-    const response = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
+    const response = await fetch(WORKER_URL, { method: 'POST', headers, body: JSON.stringify(payload) });
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-
     const data = await response.json();
     state = data.state || null;
     turnNumber++;
-
-    const reply = data.reply || data.llmReply || '(пустой ответ)';
-    addMessage(reply, 'bot');
+    addMessage(data.reply || data.llmReply || '(пустой ответ)', 'bot');
     addDebugEntry(turnNumber, data);
     setStatus(`${elapsed}s · Turn ${turnNumber}`);
-
-    // Update guide highlight
-    if (data.state) {
-      updateGuideHighlight(data.state.currentBlockIndex || 0, data.state.currentQuestionIndex || 0);
-    }
-
-    // Log to Google Sheets
+    if (data.state) updateGuideHighlight(data.state.currentBlockIndex || 0, data.state.currentQuestionIndex || 0);
     logToSheets(text, data);
-
     if (data.state?.ended || data.state?.mode === 'end') {
       setStatus('Interview ended', 'error');
       addMessage('— Интервью завершено —', 'system');
@@ -649,6 +793,5 @@ async function sendMessage() {
   }
 }
 </script>
-
 </body>
 </html>
