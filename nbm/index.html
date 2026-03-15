@@ -95,7 +95,7 @@
 
   .controls {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     align-items: center;
     margin-bottom: 1.5rem;
     flex-wrap: wrap;
@@ -131,6 +131,23 @@
   .btn:hover { background: var(--border); color: var(--text-bright); }
   .btn:active { transform: scale(0.97); }
   .btn.checking { opacity: 0.5; pointer-events: none; }
+
+  .btn.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: var(--bg);
+  }
+
+  .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .separator {
+    width: 1px;
+    height: 1.5rem;
+    background: var(--border);
+  }
 
   .summary {
     font-family: 'JetBrains Mono', monospace;
@@ -196,14 +213,8 @@
     color: var(--text-dim);
   }
 
-  .time-row .val {
-    color: var(--text);
-  }
-
-  .time-row .val.actual {
-    color: var(--green);
-    font-weight: 600;
-  }
+  .time-row .val { color: var(--text); }
+  .time-row .val.actual { color: var(--green); font-weight: 600; }
 
   .cycle-status {
     font-family: 'JetBrains Mono', monospace;
@@ -273,7 +284,7 @@
   <header>
     <h1>NBM Cycle Monitor <span>/ NOMADS</span></h1>
     <div class="meta">
-      <div>TMAX forecast availability for Kalshi weather contracts</div>
+      <div>TMAX forecast availability</div>
       <div id="clock"></div>
     </div>
   </header>
@@ -286,7 +297,10 @@
   </div>
 
   <div class="controls">
+    <button class="btn btn-sm" id="btnToday" onclick="setToday()">Today</button>
+    <button class="btn btn-sm active" id="btnTomorrow" onclick="setTomorrow()">Tomorrow</button>
     <input type="date" class="date-input" id="targetDate">
+    <div class="separator"></div>
     <button class="btn" id="checkBtn" onclick="runCheck()">Check</button>
     <div class="summary" id="summary"></div>
   </div>
@@ -324,46 +338,77 @@ function addDays(dateStr, n) {
   return d.toISOString().slice(0, 10);
 }
 
-function toLA(date) {
+function toLA_short(date) {
   return date.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
-    month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    hour: 'numeric', minute: '2-digit',
     hour12: true,
   });
 }
 
-function toLA_short(date) {
-  return date.toLocaleString('en-US', {
+function initTimeLA(targetDate, cycle) {
+  const initDate = addDays(targetDate, cycle.dayOffset);
+  const dt = new Date(initDate + 'T00:00:00Z');
+  dt.setUTCHours(cycle.initHour);
+  return dt.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
-    hour: '2-digit', minute: '2-digit',
+    month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit',
     hour12: true,
   });
 }
 
 function expectedTime(targetDate, cycle) {
   const initDate = addDays(targetDate, cycle.dayOffset);
-  const initUTC = new Date(initDate + 'T00:00:00Z');
-  initUTC.setUTCHours(cycle.initHour);
-  initUTC.setUTCMinutes(cycle.expectedLatencyMin);
-  return initUTC;
+  const dt = new Date(initDate + 'T00:00:00Z');
+  dt.setUTCHours(cycle.initHour);
+  dt.setUTCMinutes(cycle.expectedLatencyMin);
+  return dt;
 }
+
+function getLADate(offsetDays) {
+  const now = new Date();
+  const laStr = now.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+  const d = new Date(laStr + 'T00:00:00');
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+function fmtShortDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function updateQuickButtons() {
+  const val = document.getElementById('targetDate').value;
+  const today = getLADate(0);
+  const tomorrow = getLADate(1);
+  document.getElementById('btnToday').textContent = `Today (${fmtShortDate(today)})`;
+  document.getElementById('btnTomorrow').textContent = `Tomorrow (${fmtShortDate(tomorrow)})`;
+  document.getElementById('btnToday').classList.toggle('active', val === today);
+  document.getElementById('btnTomorrow').classList.toggle('active', val === tomorrow);
+}
+
+function setToday() {
+  document.getElementById('targetDate').value = getLADate(0);
+  updateQuickButtons();
+}
+
+function setTomorrow() {
+  document.getElementById('targetDate').value = getLADate(1);
+  updateQuickButtons();
+}
+
+document.getElementById('targetDate').addEventListener('change', updateQuickButtons);
 
 function updateClock() {
   const now = new Date();
   const utc = now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
   const la = now.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
-    hour: '2-digit', minute: '2-digit', hour12: true,
+    hour: 'numeric', minute: '2-digit', hour12: true,
   });
   document.getElementById('clock').textContent = `${utc} · ${la} LA`;
-}
-
-function setDefaultDate() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-  document.getElementById('targetDate').value = tomorrow.toISOString().slice(0, 10);
 }
 
 function loadWorkerUrl() {
@@ -400,6 +445,7 @@ function renderRow(cycle, index, status, lastModified) {
   const target = document.getElementById('targetDate').value;
   const iDate = addDays(target, cycle.dayOffset);
   const expected = expectedTime(target, cycle);
+  const initLA = initTimeLA(target, cycle);
 
   const statusMap = {
     ready:       '<span class="dot ready"></span>READY',
@@ -409,8 +455,6 @@ function renderRow(cycle, index, status, lastModified) {
   };
 
   const rowClass = status === 'error' ? 'unavailable' : status;
-
-  // Format times
   const expectedLA = toLA_short(expected);
 
   let actualHTML = '—';
@@ -424,7 +468,7 @@ function renderRow(cycle, index, status, lastModified) {
       <div class="cycle-num">f${pad3(cycle.fxx)}</div>
       <div class="cycle-info">
         <div class="cycle-label">${cycle.label}</div>
-        <div class="cycle-init">init ${iDate} ${pad(cycle.initHour)}Z</div>
+        <div class="cycle-init">init ${iDate} ${pad(cycle.initHour)}Z (${initLA} LA)</div>
       </div>
       <div class="cycle-times">
         <div class="time-row">exp <span class="val">${expectedLA}</span></div>
@@ -476,7 +520,7 @@ async function runCheck() {
 }
 
 loadWorkerUrl();
-setDefaultDate();
+setTomorrow();
 updateClock();
 setInterval(updateClock, 10000);
 </script>
