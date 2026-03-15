@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NBM Cycle Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0e13;
+    --surface: #141720;
+    --surface2: #1a1e2a;
+    --border: #252a3a;
+    --text: #c8cdd8;
+    --text-dim: #5a6275;
+    --text-bright: #eef0f5;
+    --green: #34d399;
+    --green-bg: rgba(52, 211, 153, 0.08);
+    --green-border: rgba(52, 211, 153, 0.25);
+    --red: #f87171;
+    --red-bg: rgba(248, 113, 113, 0.06);
+    --red-border: rgba(248, 113, 113, 0.2);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251, 191, 36, 0.08);
+    --blue: #60a5fa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -0.02em;
+  }
+
+  h1 span {
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .date-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .date-input:focus {
+    border-color: var(--blue);
+  }
+
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .btn:hover {
+    background: var(--border);
+    color: var(--text-bright);
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn.checking {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .summary {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .summary b {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* Cycle rows */
+  .cycles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cycle-row {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.3s;
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  .cycle-row.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .cycle-row.ready {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+
+  .cycle-row.unavailable {
+    background: var(--red-bg);
+    border-color: var(--red-border);
+  }
+
+  .cycle-row.pending {
+    background: var(--amber-bg);
+    border-color: rgba(251, 191, 36, 0.2);
+  }
+
+  .cycle-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .cycle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .cycle-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+
+  .cycle-init {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+
+  .cycle-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .cycle-status.ready { color: var(--green); }
+  .cycle-status.unavailable { color: var(--red); }
+  .cycle-status.pending { color: var(--amber); }
+  .cycle-status.checking { color: var(--text-dim); }
+
+  .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+
+  .dot.ready { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.unavailable { background: var(--red); }
+  .dot.pending { background: var(--amber); }
+
+  .error-banner {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+    color: var(--red);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: none;
+    line-height: 1.5;
+  }
+
+  .error-banner a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .footer {
+    margin-top: 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .checking-anim {
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  /* spinner for button */
+  .btn.checking::after {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--text-dim);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>NBM Cycle Monitor <span>/ NOMADS</span></h1>
+    <div class="meta">
+      <div>TMAX forecast availability for Kalshi weather contracts</div>
+      <div id="clock"></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <input type="date" class="date-input" id="targetDate">
+    <button class="btn" id="checkBtn" onclick="runCheck()">Check</button>
+    <div class="summary" id="summary"></div>
+  </div>
+
+  <div class="error-banner" id="errorBanner"></div>
+
+  <div class="cycles" id="cycleList"></div>
+
+  <div class="footer">
+    HEAD requests to nomads.ncep.noaa.gov — no data downloaded.<br>
+    If CORS blocked, use the Python script instead: <code>python check_cycles.py</code>
+  </div>
+</div>
+
+<script>
+const CYCLES = [
+  { fxx: 48, initHour: 0,  dayOffset: -1, label: "00z D-1" },
+  { fxx: 42, initHour: 6,  dayOffset: -1, label: "06z D-1" },
+  { fxx: 36, initHour: 12, dayOffset: -1, label: "12z D-1" },
+  { fxx: 30, initHour: 18, dayOffset: -1, label: "18z D-1" },
+  { fxx: 24, initHour: 0,  dayOffset:  0, label: "00z D-0" },
+  { fxx: 18, initHour: 6,  dayOffset:  0, label: "06z D-0" },
+  { fxx: 12, initHour: 12, dayOffset:  0, label: "12z D-0" },
+];
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function pad3(n) { return String(n).padStart(3, '0'); }
+
+function nomadsUrl(dateStr, initHour, fxx) {
+  const d = dateStr.replace(/-/g, '');
+  return `https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod/blend.${d}/${pad(initHour)}/core/blend.t${pad(initHour)}z.core.f${pad3(fxx)}.co.grib2`;
+}
+
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function initDateStr(targetDate, dayOffset) {
+  return addDays(targetDate, dayOffset);
+}
+
+function updateClock() {
+  const now = new Date();
+  const utc = now.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+  const la = now.toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+  document.getElementById('clock').textContent = `${utc} · ${la} LA`;
+}
+
+function setDefaultDate() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  document.getElementById('targetDate').value = tomorrow.toISOString().slice(0, 10);
+}
+
+async function checkSingle(url) {
+  try {
+    const resp = await fetch(url, { method: 'HEAD', mode: 'cors' });
+    return resp.ok;
+  } catch (e) {
+    // CORS blocked or network error
+    return null; // null = can't determine
+  }
+}
+
+function renderRow(cycle, index, status) {
+  // status: 'ready' | 'unavailable' | 'pending' | 'checking' | 'cors-error'
+  const target = document.getElementById('targetDate').value;
+  const iDate = initDateStr(target, cycle.dayOffset);
+
+  const statusText = {
+    'ready': '<span class="dot ready"></span>READY',
+    'unavailable': '<span class="dot unavailable"></span>NOT YET',
+    'pending': '<span class="dot pending"></span>WAITING',
+    'checking': '···',
+    'cors-error': '<span class="dot unavailable"></span>CORS ERR',
+  }[status];
+
+  const rowClass = status === 'cors-error' ? 'unavailable' : status;
+
+  return `
+    <div class="cycle-row ${rowClass} show" style="transition-delay: ${index * 60}ms">
+      <div class="cycle-num">f${pad3(cycle.fxx)}</div>
+      <div class="cycle-info">
+        <div class="cycle-label">${cycle.label}</div>
+        <div class="cycle-init">init ${iDate} ${pad(cycle.initHour)}Z</div>
+      </div>
+      <div class="cycle-status ${status} ${status === 'checking' ? 'checking-anim' : ''}">${statusText}</div>
+    </div>`;
+}
+
+async function runCheck() {
+  const btn = document.getElementById('checkBtn');
+  const list = document.getElementById('cycleList');
+  const summary = document.getElementById('summary');
+  const errorBanner = document.getElementById('errorBanner');
+  const target = document.getElementById('targetDate').value;
+
+  if (!target) return;
+
+  btn.classList.add('checking');
+  btn.textContent = 'Checking';
+  errorBanner.style.display = 'none';
+  summary.innerHTML = '';
+
+  // Show skeleton
+  list.innerHTML = CYCLES.map((c, i) => renderRow(c, i, 'checking')).join('');
+
+  let readyCount = 0;
+  let corsBlocked = false;
+
+  for (let i = 0; i < CYCLES.length; i++) {
+    const c = CYCLES[i];
+    const iDate = initDateStr(target, c.dayOffset);
+    const url = nomadsUrl(iDate, c.initHour, c.fxx);
+
+    const result = await checkSingle(url);
+
+    let status;
+    if (result === null) {
+      status = 'cors-error';
+      corsBlocked = true;
+    } else if (result) {
+      status = 'ready';
+      readyCount++;
+    } else {
+      status = 'unavailable';
+    }
+
+    // Update this row
+    const rows = list.querySelectorAll('.cycle-row');
+    rows[i].outerHTML = renderRow(c, i, status);
+  }
+
+  if (corsBlocked) {
+    errorBanner.innerHTML =
+      'CORS blocked by NOMADS. Browser can\'t check directly.<br>' +
+      'Use the Python script: <code>python check_cycles.py ' + target + '</code>';
+    errorBanner.style.display = 'block';
+  }
+
+  summary.innerHTML = `<b>${readyCount}</b>/${CYCLES.length}`;
+  btn.classList.remove('checking');
+  btn.textContent = 'Check';
+}
+
+// Init
+setDefaultDate();
+updateClock();
+setInterval(updateClock, 10000);
+</script>
+</body>
+</html>
