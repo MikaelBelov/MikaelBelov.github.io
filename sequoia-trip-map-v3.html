@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Route (Dark) · Hollywood → Sequoia → Lindsay → Kern Loop</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
+  #map { position: absolute; inset: 0; background: #0e1116; }
+
+  .title-card {
+    background: #1b2230; color: #f1f5f9; padding: 10px 14px;
+    border: 2px solid #5b6677; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.5);
+    font-size: 17px; font-weight: 800; line-height: 1.25; max-width: 330px;
+  }
+  .title-card small { display:block; font-weight: 600; font-size: 13px; color:#aeb6c2; margin-top:3px; }
+
+  .panel {
+    background: #1b2230; color: #e8edf4; padding: 14px 16px 16px;
+    border: 2px solid #5b6677; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.55);
+    max-width: 360px; width: 86vw; max-height: 80vh; overflow-y: auto; font-size: 15px; line-height: 1.4;
+  }
+  .panel h2 { font-size: 16px; margin: 2px 0 8px; }
+  .panel .day { margin: 12px 0 4px; font-weight: 800; font-size: 14px; padding: 4px 8px; border-radius: 7px; color:#fff; }
+  .panel .d1 { background:#2563eb; }
+  .panel .d2 { background:#ea580c; }
+  .panel .dx { background:#64748b; }
+  .panel ol { margin: 6px 0 4px; padding-left: 0; list-style: none; }
+  .panel li { margin: 7px 0; display: flex; gap: 9px; align-items: baseline; }
+  .panel li .pin {
+    flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; color: #fff;
+    font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center;
+    border: 2px solid #0e1116; box-shadow: 0 1px 3px rgba(0,0,0,.6);
+  }
+  .panel li b { font-size: 15px; color:#f8fafc; }
+  .panel li .meta { color: #aeb6c2; font-size: 13px; }
+  .legend { margin-top: 12px; border-top: 1px solid #3a4350; padding-top: 10px; font-size: 13px; color:#aeb6c2; }
+  .legend .row { display:flex; align-items:center; gap:8px; margin:5px 0; }
+  .swatch { width: 26px; height: 6px; border-radius: 3px; }
+  .legend .dot {
+    display:inline-flex; width:18px; height:18px; border-radius:50%; align-items:center; justify-content:center;
+    font-weight:800; font-size:11px; background:#e8edf4; color:#1b2230; border:2px dashed #94a3b8;
+  }
+  .toggle {
+    display:none; position:absolute; z-index:1001; top:12px; right:12px;
+    background:#e8edf4; color:#14181f; border:none; border-radius:8px; padding:9px 12px; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  /* Dark layer switcher */
+  .leaflet-control-layers { background:#1b2230 !important; color:#e8edf4 !important; border:1px solid #5b6677 !important; }
+  .leaflet-control-layers-expanded { padding:8px 10px !important; }
+  .leaflet-control-layers label { color:#e8edf4 !important; font-size:13px; margin:3px 0; }
+  .leaflet-bar a, .leaflet-control-zoom a { background:#1b2230; color:#e8edf4; border-bottom:1px solid #5b6677; }
+  .leaflet-bar a:hover { background:#2a3343; }
+  @media (max-width: 720px) {
+    .toggle { display:block; }
+    .panel.collapsed { display:none; }
+    .leaflet-top.leaflet-right { top: 52px; }
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<button class="toggle" onclick="document.querySelector('.panel').classList.toggle('collapsed')">☰ Plan</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
+
+  const CARTO = '&copy; OpenStreetMap &copy; CARTO';
+  const base = {
+    'Dark — detailed': L.layerGroup([
+                         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',      { maxNativeZoom:16, maxZoom:20, attribution:'&copy; Esri' }),
+                         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom:16, maxZoom:20 })
+                       ]),
+    'Dark — minimal':  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',             { subdomains:'abcd', maxZoom:20, attribution: CARTO }),
+    'Light — detailed':L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution: CARTO }),
+    'Terrain':         L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',                          { subdomains:'abc',  maxZoom:17, attribution:'&copy; OpenTopoMap (CC-BY-SA) · OpenStreetMap' }),
+    'Satellite':       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:19, attribution:'Imagery &copy; Esri' })
+  };
+  base['Dark — detailed'].addTo(map);
+  L.control.layers(base, null, { collapsed: false, position: 'bottomleft' }).addTo(map);
+
+  // ---- Route lines ----
+  const day1 = [
+    [34.0928,-118.3287],[34.8000,-118.8800],[35.0000,-118.9500],[35.3733,-119.0187],
+    [36.2070,-119.3470],[36.3302,-119.2921],[36.2960,-119.1420],[36.3830,-119.0260],
+    [36.4390,-118.9040],[36.4869,-118.8377],[36.5646,-118.7726],[36.5816,-118.7514],
+    [36.4869,-118.8377],[36.4390,-118.9040],[36.3830,-119.0260],[36.2960,-119.1420],[36.2030,-119.0879]
+  ];
+  const day2 = [
+    [36.2030,-119.0879],[36.0652,-119.0168],[36.1336,-118.8170],[36.1370,-118.6070],
+    [35.9773,-118.5940],[35.9658,-118.5390],[35.8500,-118.4900],[35.7558,-118.4254],
+    [35.6177,-118.4737],[35.4600,-118.7800],[35.3733,-119.0187],[35.0000,-118.9500],
+    [34.8000,-118.8800],[34.0928,-118.3287]
+  ];
+  function route(coords, color) {
+    L.polyline(coords, { color: '#0e1116', weight: 10, opacity: 0.9 }).addTo(map); // dark casing
+    L.polyline(coords, { color: '#ffffff', weight: 7, opacity: 0.95 }).addTo(map); // white halo
+    return L.polyline(coords, { color: color, weight: 4, opacity: 1 }).addTo(map);
+  }
+  route(day1, '#3b82f6');
+  route(day2, '#fb923c');
+
+  // ---- Main stops ----
+  const C = { green:'#22c55e', blue:'#3b82f6', orange:'#fb923c', purple:'#a78bfa', gold:'#fbbf24' };
+  const stops = [
+    {n:1,  lat:34.0928, lng:-118.3287, c:C.green,  t:'#0e1116', name:'Hollywood',                meta:'Start Sat 9:00 · finish Sun ~20:30+'},
+    {n:2,  lat:36.3302, lng:-119.2921, c:C.blue,   t:'#0e1116', name:'Visalia',                  meta:'Sat ~12:15 · lunch + gas (last before the mountains)'},
+    {n:3,  lat:36.4869, lng:-118.8377, c:C.blue,   t:'#0e1116', name:'Ash Mountain Entrance',    meta:'Sat ~13:15 · $35/car (card only)'},
+    {n:4,  lat:36.5646, lng:-118.7726, c:C.blue,   t:'#0e1116', name:'Giant Forest Museum',      meta:'Sat ~14:15 · Big Trees Trail — flat paved loop'},
+    {n:5,  lat:36.5816, lng:-118.7514, c:C.gold,   t:'#0e1116', name:'⭐ General Sherman Tree',  meta:'Sat ~16:00 · LARGEST TREE ON EARTH + Congress Trail (1.9 mi, paved)', big:true},
+    {n:6,  lat:36.2030, lng:-119.0879, c:C.purple, t:'#0e1116', name:'Lindsay',                  meta:'Overnight · depart Sun ~10:00'},
+    {n:7,  lat:36.0652, lng:-119.0168, c:C.orange, t:'#0e1116', name:'Porterville',              meta:'Sun · gas up before the climb'},
+    {n:8,  lat:35.9773, lng:-118.5940, c:C.gold,   t:'#0e1116', name:'⭐ Trail of 100 Giants',   meta:'Sun ~12:00 · giant sequoia grove · $12 CASH', big:true},
+    {n:9,  lat:35.7558, lng:-118.4254, c:C.orange, t:'#0e1116', name:'Kernville',                meta:'Sun ~14:30 · lunch, town on the Kern River'},
+    {n:10, lat:35.6177, lng:-118.4737, c:C.orange, t:'#0e1116', name:'Lake Isabella',            meta:'Sun ~15:15 · lake, then Kern River Canyon (CA-178)'},
+    {n:11, lat:35.3733, lng:-119.0187, c:C.orange, t:'#0e1116', name:'Bakersfield',              meta:'Sun ~17:30 · then CA-99 / I-5 home'}
+  ];
+
+  // ---- Optional / extra stops ----
+  const extras = [
+    {L:'A', lat:36.2960, lng:-119.1420, name:'Exeter murals',           meta:'Sat · mural town, quick stretch (Hwy 198)'},
+    {L:'B', lat:36.4390, lng:-118.9040, name:'Three Rivers',            meta:'Sat · gateway town: cafes, river, last gas/food'},
+    {L:'C', lat:36.5072, lng:-118.8260, name:'Tunnel Rock',             meta:'Sat · 1938 granite arch, photo pullout'},
+    {L:'D', lat:36.5231, lng:-118.7957, name:'⭐ Hospital Rock',         meta:'Sat · Native American pictographs + grinding mortars · flat, free'},
+    {L:'E', lat:36.5435, lng:-118.7820, name:'Amphitheater Point',      meta:'Sat · viewpoint: Moro Rock & Castle Rocks'},
+    {L:'F', lat:36.5638, lng:-118.7748, name:'Beetle Rock',             meta:'Sat · granite viewpoint behind the museum, sunset spot'},
+    {L:'G', lat:36.0986, lng:-118.5575, name:'⭐ Dome Rock',             meta:'Sun · granite dome, huge views, easy walk (on the way to Trail of 100 Giants)'},
+    {L:'H', lat:35.9870, lng:-118.4850, name:'Johnsondale Bridge',      meta:'Sun · wild Kern River access, turnouts'},
+    {L:'I', lat:35.8500, lng:-118.4900, name:'Kern River turnouts',     meta:'Sun · riverside pullouts (Fairview area)'},
+    {L:'J', lat:35.4600, lng:-118.7800, name:'Kern River Canyon',       meta:'Sun · dramatic gorge viewpoints on CA-178'},
+    {L:'K', lat:35.8639, lng:-119.3933, name:'Colonel Allensworth SHP', meta:'Optional detour W of CA-99 · historic 1908 all-Black-founded town'},
+    {L:'L', lat:36.4458, lng:-119.4840, name:'Bravo Farms (Traver)',    meta:'Optional detour off Hwy 99 · quirky roadside Americana'}
+  ];
+
+  function icon(s) {
+    const d = s.big ? 38 : 30, fs = s.big ? 16 : 14;
+    return L.divIcon({
+      className: '', iconSize: [d, d], iconAnchor: [d/2, d/2], popupAnchor: [0, -d/2],
+      html: `<div style="width:${d}px;height:${d}px;border-radius:50%;background:${s.c};color:${s.t};
+             border:3px solid #0e1116;box-shadow:0 0 0 1px rgba(255,255,255,.5),0 1px 5px rgba(0,0,0,.7);
+             display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${fs}px">${s.n}</div>`
+    });
+  }
+  function iconExtra(letter) {
+    const d = 22;
+    return L.divIcon({
+      className: '', iconSize: [d, d], iconAnchor: [d/2, d/2], popupAnchor: [0, -d/2],
+      html: `<div style="width:${d}px;height:${d}px;border-radius:50%;background:#e8edf4;color:#1b2230;
+             border:2px dashed #94a3b8;box-shadow:0 1px 3px rgba(0,0,0,.6);display:flex;align-items:center;
+             justify-content:center;font-weight:800;font-size:12px">${letter}</div>`
+    });
+  }
+
+  stops.forEach(s => {
+    L.marker([s.lat, s.lng], { icon: icon(s) }).addTo(map)
+      .bindPopup(`<div style="font-size:15px"><b>${s.n}. ${s.name}</b><br><span style="color:#475569">${s.meta}</span></div>`)
+      .bindTooltip(`${s.n}. ${s.name}`, { direction: 'top', offset: [0, -8], opacity: 0.95 });
+  });
+  extras.forEach(s => {
+    L.marker([s.lat, s.lng], { icon: iconExtra(s.L) }).addTo(map)
+      .bindPopup(`<div style="font-size:15px"><b>${s.L}. ${s.name}</b><br><span style="color:#475569">${s.meta}</span></div>`)
+      .bindTooltip(`${s.L}. ${s.name}`, { direction: 'top', offset: [0, -8], opacity: 0.95 });
+  });
+
+  const allPts = day1.concat(day2, extras.map(e => [e.lat, e.lng]));
+  map.fitBounds(L.latLngBounds(allPts), { padding: [55, 55] });
+
+  // ---- Title ----
+  const titleCtl = L.control({ position: 'topleft' });
+  titleCtl.onAdd = function () {
+    const d = L.DomUtil.create('div', 'title-card');
+    d.innerHTML = 'Sequoia weekend (dark)<small>Sat–Sun · Hollywood → Giant Forest → Lindsay → Trail of 100 Giants → Kern River loop → home</small>';
+    return d;
+  };
+  titleCtl.addTo(map);
+
+  // ---- Plan panel ----
+  const panel = L.control({ position: 'topright' });
+  panel.onAdd = function () {
+    const d = L.DomUtil.create('div', 'panel');
+    L.DomEvent.disableClickPropagation(d);
+    L.DomEvent.disableScrollPropagation(d);
+    const li = s => `<li><span class="pin" style="background:${s.c};color:${s.t}">${s.n}</span><span><b>${s.name}</b><div class="meta">${s.meta}</div></span></li>`;
+    const lix = s => `<li><span class="pin" style="background:#e8edf4;color:#1b2230;border:2px dashed #94a3b8">${s.L}</span><span><b>${s.name}</b><div class="meta">${s.meta}</div></span></li>`;
+    d.innerHTML = `
+      <h2>🌲 Trip plan</h2>
+      <div class="day d1">SATURDAY — to the largest tree</div>
+      <ol>${stops.slice(0,6).map(li).join('')}</ol>
+      <div class="day d2">SUNDAY — sequoia grove + Kern Canyon</div>
+      <ol>${stops.slice(5).map(li).join('')}</ol>
+      <div class="day dx">OPTIONAL / EXTRA STOPS</div>
+      <ol>${extras.map(lix).join('')}</ol>
+      <div class="legend">
+        <div class="row"><span class="swatch" style="background:#3b82f6"></span> Day 1 (out + to Lindsay)</div>
+        <div class="row"><span class="swatch" style="background:#fb923c"></span> Day 2 (loop home)</div>
+        <div class="row"><span class="dot">A</span> Optional stops (A–L) · zoom in to see all</div>
+        <div class="row">⭐ — key stops · 💵 Trail of 100 Giants: $12 cash</div>
+        <div class="row">🗺️ Map style — switch bottom-left (Light / Terrain / Satellite)</div>
+      </div>`;
+    return d;
+  };
+  panel.addTo(map);
+</script>
+</body>
+</html>
