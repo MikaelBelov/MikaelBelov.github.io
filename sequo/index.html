@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#ffffff" />
+<title>Sequoia Trip · iPhone</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root { --ink:#14181f; --muted:#475569; --line:#dde1e7; }
+  * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
+  html, body { margin:0; background:#fff; color:var(--ink);
+    font-family: -apple-system, system-ui, "Segoe UI", Arial, sans-serif; font-size:17px; line-height:1.42; }
+  .wrap { padding: max(14px, env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom)); max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 21px; margin: 4px 0 2px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+
+  .navbtns { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .btn { display:flex; align-items:center; justify-content:center; min-height: 52px; padding: 12px 14px;
+    border-radius: 12px; font-weight: 800; font-size: 17px; text-decoration: none; color:#fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .btn.b1 { background:#1d4ed8; }
+  .btn.b2 { background:#ea580c; }
+  .btn small { display:block; font-weight:600; font-size:12px; opacity:.92; }
+
+  #map { height: 56vh; min-height: 320px; border-radius: 14px; border: 2px solid var(--ink);
+    box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+  .hint { font-size: 13px; color: var(--muted); margin: 10px 2px 16px; }
+
+  .day { font-weight: 800; font-size: 14px; color:#fff; padding: 6px 10px; border-radius: 8px; margin: 16px 0 4px; }
+  .d1 { background:#1d4ed8; } .d2 { background:#ea580c; } .dx { background:#475569; }
+
+  .srow { display:flex; align-items:center; gap:11px; padding: 13px 6px; border-bottom: 1px solid var(--line);
+    text-decoration: none; color: var(--ink); min-height: 56px; }
+  .srow:active { background:#f1f5f9; }
+  .pin { flex:0 0 auto; width: 30px; height: 30px; border-radius:50%; color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35); }
+  .txt { flex:1 1 auto; min-width:0; }
+  .txt b { font-size: 16px; }
+  .txt .meta { display:block; color: var(--muted); font-size: 13px; }
+  .go { flex:0 0 auto; color:#1d4ed8; font-weight:800; font-size: 14px; white-space:nowrap; }
+
+  .foot { margin-top: 18px; padding: 12px 14px; background:#f7f8fa; border:1px solid var(--line);
+    border-radius: 12px; font-size: 14px; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🌲 Sequoia weekend · Sat–Sun</h1>
+  <p class="sub">Hollywood → Giant Forest → Lindsay → Trail of 100 Giants → Kern River loop → home</p>
+
+  <div class="navbtns">
+    <a class="btn b1" href="https://www.google.com/maps/dir/Hollywood,+Los+Angeles,+CA/Visalia,+CA/General+Sherman+Tree,+Sequoia+National+Park/Lindsay,+CA">🧭 Saturday route — open in Google Maps<small>Hollywood → General Sherman → Lindsay</small></a>
+    <a class="btn b2" href="https://www.google.com/maps/dir/Lindsay,+CA/Trail+of+100+Giants/Kernville,+CA/Lake+Isabella,+CA/Bakersfield,+CA/Hollywood,+Los+Angeles,+CA">🧭 Sunday route — open in Google Maps<small>Lindsay → Trail of 100 Giants → Kern loop → home</small></a>
+  </div>
+
+  <div id="map"></div>
+  <p class="hint">Tap any stop below to open it in Apple Maps. Change map style with the control at bottom-left of the map.</p>
+
+  <div id="list"></div>
+
+  <div class="foot">💵 Trail of 100 Giants — <b>$12 cash</b> · Park entry $35 (card) · ⛽ gas in Visalia (Sat) &amp; Porterville (Sun) · 📵 download offline maps before the mountains.</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const map = L.map('map', { zoomControl: true, scrollWheelZoom: false });
+
+  const CARTO = '&copy; OpenStreetMap &copy; CARTO';
+  const base = {
+    'Light — detailed': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains:'abcd', maxZoom:20, attribution: CARTO }),
+    'Terrain':          L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',                          { subdomains:'abc',  maxZoom:17, attribution:'&copy; OpenTopoMap (CC-BY-SA) · OSM' }),
+    'Satellite':        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:19, attribution:'Imagery &copy; Esri' }),
+    'Dark — detailed':  L.layerGroup([
+                          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',      { maxNativeZoom:16, maxZoom:20, attribution:'&copy; Esri' }),
+                          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom:16, maxZoom:20 })
+                        ])
+  };
+  base['Light — detailed'].addTo(map);
+  L.control.layers(base, null, { collapsed: true, position: 'bottomleft' }).addTo(map);
+
+  const day1 = [
+    [34.0928,-118.3287],[34.8000,-118.8800],[35.0000,-118.9500],[35.3733,-119.0187],
+    [36.2070,-119.3470],[36.3302,-119.2921],[36.2960,-119.1420],[36.3830,-119.0260],
+    [36.4390,-118.9040],[36.4869,-118.8377],[36.5646,-118.7726],[36.5816,-118.7514],
+    [36.4869,-118.8377],[36.4390,-118.9040],[36.3830,-119.0260],[36.2960,-119.1420],[36.2030,-119.0879]
+  ];
+  const day2 = [
+    [36.2030,-119.0879],[36.0652,-119.0168],[36.1336,-118.8170],[36.1370,-118.6070],
+    [35.9773,-118.5940],[35.9658,-118.5390],[35.8500,-118.4900],[35.7558,-118.4254],
+    [35.6177,-118.4737],[35.4600,-118.7800],[35.3733,-119.0187],[35.0000,-118.9500],
+    [34.8000,-118.8800],[34.0928,-118.3287]
+  ];
+  function route(coords, color) {
+    L.polyline(coords, { color:'#fff', weight:8, opacity:.95 }).addTo(map);
+    L.polyline(coords, { color, weight:5, opacity:.95 }).addTo(map);
+  }
+  route(day1, '#1d4ed8');
+  route(day2, '#ea580c');
+
+  const C = { green:'#15803d', blue:'#1d4ed8', orange:'#ea580c', purple:'#7c3aed', gold:'#f59e0b' };
+  const stops = [
+    {n:1,  lat:34.0928, lng:-118.3287, c:C.green,  t:'#fff', name:'Hollywood',              meta:'Start Sat 9:00 · finish Sun ~20:30+'},
+    {n:2,  lat:36.3302, lng:-119.2921, c:C.blue,   t:'#fff', name:'Visalia',                meta:'Sat ~12:15 · lunch + gas'},
+    {n:3,  lat:36.4869, lng:-118.8377, c:C.blue,   t:'#fff', name:'Ash Mountain Entrance',  meta:'Sat ~13:15 · $35/car (card)'},
+    {n:4,  lat:36.5646, lng:-118.7726, c:C.blue,   t:'#fff', name:'Giant Forest Museum',    meta:'Sat ~14:15 · Big Trees Trail'},
+    {n:5,  lat:36.5816, lng:-118.7514, c:C.gold,   t:'#14181f', name:'⭐ General Sherman Tree', meta:'Sat ~16:00 · largest tree + Congress Trail'},
+    {n:6,  lat:36.2030, lng:-119.0879, c:C.purple, t:'#fff', name:'Lindsay',                meta:'Overnight · depart Sun ~10:00'},
+    {n:7,  lat:36.0652, lng:-119.0168, c:C.orange, t:'#fff', name:'Porterville',            meta:'Sun · gas before the climb'},
+    {n:8,  lat:35.9773, lng:-118.5940, c:C.gold,   t:'#14181f', name:'⭐ Trail of 100 Giants', meta:'Sun ~12:00 · sequoia grove · $12 cash'},
+    {n:9,  lat:35.7558, lng:-118.4254, c:C.orange, t:'#fff', name:'Kernville',              meta:'Sun ~14:30 · lunch, Kern River'},
+    {n:10, lat:35.6177, lng:-118.4737, c:C.orange, t:'#fff', name:'Lake Isabella',          meta:'Sun ~15:15 · lake → Kern Canyon'},
+    {n:11, lat:35.3733, lng:-119.0187, c:C.orange, t:'#fff', name:'Bakersfield',            meta:'Sun ~17:30 · CA-99 / I-5 home'}
+  ];
+  const extras = [
+    {L:'A', lat:36.2960, lng:-119.1420, name:'Exeter murals',           meta:'Sat · mural town'},
+    {L:'B', lat:36.4390, lng:-118.9040, name:'Three Rivers',            meta:'Sat · gateway town, last food/gas'},
+    {L:'C', lat:36.5072, lng:-118.8260, name:'Tunnel Rock',             meta:'Sat · 1938 granite arch'},
+    {L:'D', lat:36.5231, lng:-118.7957, name:'⭐ Hospital Rock',         meta:'Sat · pictographs, flat & free'},
+    {L:'E', lat:36.5435, lng:-118.7820, name:'Amphitheater Point',      meta:'Sat · viewpoint'},
+    {L:'F', lat:36.5638, lng:-118.7748, name:'Beetle Rock',             meta:'Sat · granite viewpoint / sunset'},
+    {L:'G', lat:36.0986, lng:-118.5575, name:'⭐ Dome Rock',             meta:'Sun · granite dome, huge views'},
+    {L:'H', lat:35.9870, lng:-118.4850, name:'Johnsondale Bridge',      meta:'Sun · Kern River access'},
+    {L:'I', lat:35.8500, lng:-118.4900, name:'Kern River turnouts',     meta:'Sun · riverside pullouts'},
+    {L:'J', lat:35.4600, lng:-118.7800, name:'Kern River Canyon',       meta:'Sun · gorge viewpoints (CA-178)'},
+    {L:'K', lat:35.8639, lng:-119.3933, name:'Colonel Allensworth SHP', meta:'Optional detour · historic 1908 town'},
+    {L:'L', lat:36.4458, lng:-119.4840, name:'Bravo Farms (Traver)',    meta:'Optional detour · roadside Americana'}
+  ];
+
+  // markers
+  function icon(s){ const d=s.big?36:28, fs=s.big?15:13;
+    return L.divIcon({ className:'', iconSize:[d,d], iconAnchor:[d/2,d/2], popupAnchor:[0,-d/2],
+      html:`<div style="width:${d}px;height:${d}px;border-radius:50%;background:${s.c};color:${s.t};border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${fs}px">${s.n}</div>` }); }
+  function iconExtra(L_){ const d=20;
+    return L.divIcon({ className:'', iconSize:[d,d], iconAnchor:[d/2,d/2],
+      html:`<div style="width:${d}px;height:${d}px;border-radius:50%;background:#fff;color:#334155;border:2px dashed #475569;box-shadow:0 1px 2px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px">${L_}</div>` }); }
+  stops.forEach(s => L.marker([s.lat,s.lng],{icon:icon(s)}).addTo(map).bindPopup(`<b>${s.n}. ${s.name}</b><br>${s.meta}`));
+  extras.forEach(s => L.marker([s.lat,s.lng],{icon:iconExtra(s.L)}).addTo(map).bindPopup(`<b>${s.L}. ${s.name}</b><br>${s.meta}`));
+
+  map.fitBounds(L.latLngBounds(day1.concat(day2, extras.map(e=>[e.lat,e.lng]))), { padding:[40,40] });
+
+  // tap-to-open-in-Apple-Maps list
+  const apple = s => `https://maps.apple.com/?q=${encodeURIComponent((s.name||'').replace('⭐','').trim())}&ll=${s.lat},${s.lng}`;
+  const row = (label, s, pinStyle) => `<a class="srow" href="${apple(s)}">
+      <span class="pin" style="${pinStyle}">${label}</span>
+      <span class="txt"><b>${s.name}</b><span class="meta">${s.meta}</span></span>
+      <span class="go">Maps ›</span></a>`;
+  const pinMain = s => `background:${s.c};color:${s.t}`;
+  const pinX = 'background:#fff;color:#334155;border:2px dashed #475569';
+  document.getElementById('list').innerHTML =
+    `<div class="day d1">SATURDAY — to the largest tree</div>` +
+    stops.slice(0,6).map(s => row(s.n, s, pinMain(s))).join('') +
+    `<div class="day d2">SUNDAY — sequoia grove + Kern Canyon</div>` +
+    stops.slice(6).map(s => row(s.n, s, pinMain(s))).join('') +
+    `<div class="day dx">OPTIONAL / EXTRA STOPS</div>` +
+    extras.map(s => row(s.L, s, pinX)).join('');
+
+  setTimeout(() => map.invalidateSize(), 200);
+</script>
+</body>
+</html>
